@@ -17,4 +17,4 @@ Para materializar esta solución, el proyecto se divide en tres pilares:
    * Proyecciones Financieras: Módulo de cálculo de costos para estimar el gasto hídrico y económico, permitiendo una planificación presupuestaria eficiente.
 
 
-Figma: https://www.figma.com/make/TsN6HLZW9v0ED70RTCzPpf/Sistema-de-regad%C3%ADo-web?fullscreen=1&t=a97qlkzw1kuwYsoc-1
+Figma: https://dig-cotton-96586616.figma.site/
