@@ -1,9 +1,9 @@
 # Proyecto-EcoSystems: Optimización de Riego mediante IoT e IA
 
 Miembros:           
-1.Joaquin Molina - Responsable de Backend (Gestión de Datos). 
-2.Bruno Diaz - Responsable de Hardware (Obtención de Datos).
-3.Jorge Bahamondes - Responsable de Frontend (Interfaz de Gestión y control).
+* Joaquin Molina - Responsable de Backend (Gestión de Datos)
+* Bruno Diaz - Responsable de Hardware (Obtención de Datos)
+* Jorge Bahamondes - Responsable de Frontend (Interfaz de Gestión y Control)
 
 La Región de Valparaíso enfrenta una crisis hídrica. En un escenario de escasez, los métodos de riego tradicionales resultan ineficientes, provocando un desperdicio crítico de recursos. Existe una necesidad urgente de tecnificar el agro regional para asegurar la sostenibilidad de la producción local.
 
