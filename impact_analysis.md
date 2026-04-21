@@ -89,3 +89,4 @@ https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/Diagrama%2
 
 Cambia el estilo arquitectónico, debido a que al tener que realizar cambios en los datos y transformarlos a un formato global, la forma de tratarlos. Pero más allá, en el front-end no genera mayores cambios para la visualización de los mismos según el usuario que los solicita.
 
+chat con IA: https://claude.ai/chat/e4d6720d-e6df-441b-871e-ab7350940ba8
