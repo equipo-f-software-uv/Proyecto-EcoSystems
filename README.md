@@ -14,3 +14,6 @@ Para materializar esta solución, el proyecto se divide en tres pilares:
 3. Inteligencia y Analítica:
    * Modelos Predictivos: Uso de IA para procesar los datos obtenidos y predecir necesidades futuras de riego según el clima y el estado del suelo.
    * Proyecciones Financieras: Módulo de cálculo de costos para estimar el gasto hídrico y económico, permitiendo una planificación presupuestaria eficiente.
+
+
+Figma: https://www.figma.com/make/TsN6HLZW9v0ED70RTCzPpf/Sistema-de-regad%C3%ADo-web?fullscreen=1&t=a97qlkzw1kuwYsoc-1
