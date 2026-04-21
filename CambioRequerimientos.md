@@ -42,11 +42,19 @@ Como arquitecto de software,
 quiero desacoplar el flujo de ingesta masiva del flujo de control de válvulas,
 para eliminar la contención de recursos y permitir optimizaciones independientes.
 
+US-13: Visualización de históricos optimizada
+Descripción:
+Como usuario final,
+quiero consultar gráficos de consumo de agua y humedad sin afectar el sistema,
+para analizar el comportamiento del huerto sin degradar el rendimiento del riego automático.
+
 Criterios de aceptación:
-CA1: El servicio de control de válvulas debe ejecutarse en un proceso o contenedor separado del servicio de ingesta de históricos.
-CA2: El procesamiento de analíticas y gráficos no debe afectar la prioridad de ejecución del hilo de control de riego.
-CA3: Se debe implementar un mecanismo de comunicación ligera (como un bus de eventos) entre ambos servicios aislados.
-=================================================================================================
+CA1: La consulta de históricos debe realizarse sobre una base de datos optimizada para lectura e independiente del flujo de estado actual.
+CA2: El tiempo de generación de los gráficos no debe interferir con la recepción de señales de los sensores en el Gateway.
+CA3: Los gráficos de los últimos 7 días deben renderizarse en la interfaz en menos de 2 segundos.
+
+==================================================================================================
+
 US-13: Visualización de históricos optimizada
 Descripción:
 Como usuario final,
