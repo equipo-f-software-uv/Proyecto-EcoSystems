@@ -1,6 +1,6 @@
 # Proyecto-EcoSystems: Optimización de Riego mediante IoT e IA
 
-Miembros            Labor
+Miembros            
 -Joaquin Molina     Responsable de Backend (Gestión de Datos) 
 -Bruno Diaz         Responsable de Hardware (Obtención de Datos)
 -Jorge Bahamondes   Responsable de Frontend (Interfaz de Gestión y control)
