@@ -1,3 +1,13 @@
+1. Cambio Solicitado:
+Cambio funcional
+Se requiere soportar múltiples tipos de sensores de distintos fabricantes, cada uno con su propio protocolo (MQTT, HTTP, LoRaWAN), y que cada tipo pueda actualizarse o reemplazarse de forma independiente.
+Cambio no funcional
+El módulo de ingesta de datos debe procesar hasta 10.000 lecturas por segundo en peak sin degradar el tiempo de respuesta del control de válvulas, que debe actuar en menos de 100ms.
+Tensión arquitectónica
+En capas, la ingesta masiva y el control en tiempo real comparten el mismo stack. La diferencia de volumen y latencia hace inviable optimizarlos simultáneamente sin aislarlos en procesos independientes.
+
+2. Nuevas historias de usuario
+   
 US-09: Soporte de multiprotocolo para sensores:
 Descripción:
 Como desarrollador del sistema,
@@ -65,3 +75,17 @@ Criterios de aceptación:
 CA1: La consulta de históricos debe realizarse sobre una base de datos optimizada para lectura e independiente del flujo de estado actual.
 CA2: El tiempo de generación de los gráficos no debe interferir con la recepción de señales de los sensores en el Gateway.
 CA3: Los gráficos de los últimos 7 días deben renderizarse en la interfaz en menos de 2 segundos.
+
+3. Impacto en requisitos extrafuncionales
+REF ID,Descripción,Prioridad anterior,Prioridad nueva,Cambio / Motivo
+REF-01,Latencia de control de válvulas,Alta,Crítica,Se fija un límite estricto de < 100ms.
+REF-02,Capacidad de ingesta de datos,Media,Alta,Nuevo requerimiento de 10.000 lecturas/seg.
+REF-03,Modificabilidad de protocolos,Media,Alta,Exigencia de independencia entre MQTT/HTTP/LoRa.
+REF-07,Aislamiento de procesos,—,Alta,Nuevo: Evitar que la ingesta degrade el control.
+REF-08,Escalabilidad horizontal,Baja,Media,Necesario para absorber picos de carga masiva.
+
+4. Impacto en arquitectura 
+https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/Diagrama%20arquitectonico.md
+
+Cambia el estilo arquitectónico, debido a que al tener que realizar cambios en los datos y transformarlos a un formato global, la forma de tratarlos. Pero más allá, en el front-end no genera mayores cambios para la visualización de los mismos según el usuario que los solicita.
+
