@@ -1,0 +1,1 @@
+Aquí irá toda la info necesaria para el front en su versión web
