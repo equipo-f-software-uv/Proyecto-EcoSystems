@@ -27,12 +27,18 @@ CREATE TABLE IF NOT EXISTS perfil_cultivo (
 CREATE TABLE IF NOT EXISTS medicion_historica (
     id_medicion INT AUTO_INCREMENT PRIMARY KEY,
     id_nodo VARCHAR(50) NOT NULL,
+    protocolo VARCHAR(20) NOT NULL,
     humedad_suelo_prc DECIMAL(5,2) NOT NULL,
     temperatura_c DECIMAL(5,2) NOT NULL,
     flujo_agua_lpm DECIMAL(5,2) NOT NULL,
-    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_hora TIMESTAMP NOT NULL, -- Timestamp real enviado por el hardware
+    fecha_recepcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp de llegada al servidor
     FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE CASCADE
 );
+
+-- Índices para optimizar las consultas históricas de alta intensidad (US-13 y requerimiento de 10.000 req/s)
+CREATE INDEX idx_medicion_historica_fecha ON medicion_historica (fecha_hora DESC);
+CREATE INDEX idx_medicion_historica_nodo_fecha ON medicion_historica (id_nodo, fecha_hora DESC);
 
 -- 4. Tabla de Auditoría: Registro de Válvulas (Ref: Issue #5)
 CREATE TABLE IF NOT EXISTS registro_valvula (

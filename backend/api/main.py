@@ -64,16 +64,18 @@ def recibir_medicion(payload: PayloadSensor):
         # Consulta SQL preparada para evitar inyecciones SQL
         query = """
             INSERT INTO medicion_historica 
-            (id_nodo, humedad_suelo_prc, temperatura_c, flujo_agua_lpm) 
-            VALUES (%s, %s, %s, %s)
+            (id_nodo, protocolo, humedad_suelo_prc, temperatura_c, flujo_agua_lpm, fecha_hora) 
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
         
         # Extraemos los datos validados del payload
         valores = (
             payload.sensor_id,
+            payload.protocol,
             payload.metrics.humedad_suelo_prc,
             payload.metrics.temperatura_c,
-            payload.metrics.flujo_agua_lpm
+            payload.metrics.flujo_agua_lpm,
+            payload.timestamp.replace("T", " ").replace("Z", "") # Parseo simple de ISO 8601 a DATETIME MySQL
         )
         
         # Ejecutamos y guardamos (commit)
