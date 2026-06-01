@@ -29,7 +29,7 @@ Para materializar esta solución, el proyecto se divide en tres pilares esencial
 
 ## Requisitos Extrafuncionales 
 
-Ver: [Reqextrafuncionales.md](./Reqextrafuncionales.md) *(Asegúrate de crear este archivo en tu repositorio)*
+Ver: [Reqextrafuncionales.md](./Reqextrafuncionales.md)
 
 ## Entidades del Dominio 
 
