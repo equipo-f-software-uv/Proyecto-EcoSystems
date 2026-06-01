@@ -36,7 +36,7 @@ Ver: [Reqextrafuncionales.md](./Reqextrafuncionales.md)
 Ver: [modelo_dominio.md](./modelo_dominio.md)
 
 ## Mockups 
-Enlace de figma: https://dig-cotton-96586616.figma.site/
+Enlace de figma: https://flick-vector-39224673.figma.site
 
 | Mockup | Historia de usuario relacionada                                   |
 |--------|-------------------------------------------------------------------|
