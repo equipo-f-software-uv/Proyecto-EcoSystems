@@ -74,8 +74,7 @@ para analizar el comportamiento de mi siembra sin degradar el rendimiento del ri
 
 # 4. Impacto en entidades del dominio
 
-<img width="656" height="648" alt="modelo-dominio-ecosystems" src="https://github.com/user-attachments/assets/PONER_AQUI_EL_ID_DE_TU_IMAGEN" />
-
+https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/Diagrama%20arquitectonico.md
 ---
 
 # 5. Impacto en mockups
