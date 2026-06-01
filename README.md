@@ -40,7 +40,7 @@ Enlace de figma: https://dig-cotton-96586616.figma.site/
 
 | Mockup | Historia de usuario relacionada                                   |
 |--------|-------------------------------------------------------------------|
-|[Vista US-01](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/US-01.png)|[#Issue 1](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/1)|
+|[Vista US-01](Vista US-01.md)|[#Issue 1](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/1)|
 |[Vista US-02](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/US-02.png)|[#Issue 2](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/2)|
 |[Vista US-03](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/US-03.png)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/3)| 
 *(Nota: Recuerda subir las capturas de pantalla de tus mockups a la raíz de tu repositorio con nombres como US-01.png, o cambiar los enlaces a las imágenes correspondientes)*
