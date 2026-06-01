@@ -72,9 +72,64 @@ para analizar el comportamiento de mi siembra sin degradar el rendimiento del ri
 
 ---
 
-# 4. Impacto en entidades del dominio
+## 4. Impacto en entidades del dominio
 
-https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/blob/main/Diagrama%20arquitectonico.md
+```mermaid
+classDiagram
+    direction LR
+    
+    class Sensor {
+        +int id
+        +string nombre
+        +string macAddress
+        +string ubicacionCampo
+        +int protocoloId
+    }
+
+    class ProtocoloAdaptador {
+        +int id
+        +string nombreProtocolo
+        +string puertoEscucha
+        +string versionModulo
+    }
+
+    class LecturaTelemetria {
+        +int id
+        +int sensorId
+        +float valorHumedad
+        +float valorTemperatura
+        +float valorFlujoAgua
+        +datetime fechaHora
+    }
+
+    class ReglaNegocioRiego {
+        +int id
+        +float umbralHumedadMin
+        +float umbralTemperaturaMax
+        +string descripcion
+    }
+
+    class ValvulaControl {
+        +int id
+        +string nombreValvula
+        +string estadoActual
+        +string ubicacionEspecifica
+    }
+
+    class EventoAuditoriaControl {
+        +int id
+        +int valvulaId
+        +string accionGatillada
+        +int latenciaMs
+        +datetime fechaHora
+    }
+
+    ProtocoloAdaptador "1" --* "0..*" Sensor : gestiona
+    Sensor "1" --o "0..*" LecturaTelemetria : registra
+    LecturaTelemetria "1" ..> "0..1" ReglaNegocioRiego : evalua
+    ReglaNegocioRiego "1" ..> "0..*" ValvulaControl : gatilla_accion
+    ValvulaControl "1" --* "0..*" EventoAuditoriaControl : genera
+````
 ---
 
 # 5. Impacto en mockups
