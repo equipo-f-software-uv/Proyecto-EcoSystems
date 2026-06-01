@@ -47,7 +47,7 @@ Enlace de figma: https://dig-cotton-96586616.figma.site/
 
 ## Diseño Arquitectónico 
 
-Ver: [Arquitectura.md](./Arquitectura.md) *(Asegúrate de crear este archivo en tu repositorio)*
+Ver: [Arquitectura.md](./Arquitectura.md)
  
 ## Responsabilidades del Equipo 
 
