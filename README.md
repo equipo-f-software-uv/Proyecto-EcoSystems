@@ -33,7 +33,7 @@ Ver: [Reqextrafuncionales.md](./Reqextrafuncionales.md)
 
 ## Entidades del Dominio 
 
-Ver: [modelo-dominio.md](./modelo-dominio.md) *(Asegúrate de crear este archivo en tu repositorio)*
+Ver: [modelo_dominio.md](./modelo_dominio.md)
 
 ## Mockups 
 Enlace de figma: https://dig-cotton-96586616.figma.site/
