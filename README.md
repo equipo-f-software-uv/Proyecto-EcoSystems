@@ -15,12 +15,17 @@ Para materializar esta solución, el proyecto se divide en tres pilares esencial
 
 | ID   | Nombre                                         | Issue  | 
 |------|------------------------------------------------|--------| 
-| US-01 | [Ej: Visualización de humedad en tiempo real]  | #1     | 
-| US-02 | [Ej: Configuración de alertas de riego]        | #2     | 
-| US-03 | [Ej: Consulta de proyecciones financieras]     | #3     | 
-| US-04 | [Ej: Reporte histórico de consumo hídrico]     | #4     | 
-| US-05 | [Ej: Modificación manual de parámetros de riego]| #5     | 
-*(Nota: Añade o modifica las filas según las historias de usuario que tengan definidas en sus Issues de GitHub)*
+| US-01 | Reporte mensual de consumo de agua para análisis e costos                     | #1 | 
+| US-02 | Almacenamiento histórico de lecturas de sensores en la base de datos          | #2 | 
+| US-03 | Control automático de riego según umbrales de humedad                         | #3 | 
+| US-04 | Gestión de perfiles de humedad por tipo de cultivo                            | #4 | 
+| US-05 | Registro de auditoria (log) para el control de válvulas                       | #5 |
+| US-06 | Panel de registro y monitoreo de errores del sistema (Logs)                   | #6 |
+| US-07 | Atributo que aplican al proyecto                                              | #7 |
+| US-8 | Dashboard de gráficos históricos e interactivos de humedad y riego             | #8 |
+| US-9 | Generación de recomendaciones de riego basadas en pronóstico climático e IA    | #9 |
+| US-10 | [DOC] Definición e Integración del Bosquejo de Arquitectura General           | #10  |
+
 
 ## Requisitos Extrafuncionales 
 
