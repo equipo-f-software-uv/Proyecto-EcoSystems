@@ -43,13 +43,13 @@ Enlace de figma: https://flick-vector-39224673.figma.site
 |[Vista US-01](./US-01.md)|[#Issue 1](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/1)|
 |[Vista US-02](./US-02.md)|[#Issue 2](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/2)|
 |[Vista US-03](./US-03.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/3)| 
-|[Vista US-03](./US-04.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/4)|
-|[Vista US-03](./US-05.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/5)|
-|[Vista US-03](./US-06.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/6)| 
-|[Vista US-03](./US-07.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/7)|
-|[Vista US-03](./US-08.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/8)| 
-|[Vista US-03](./US-09.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/9)| 
-|[Vista US-03](./US-10.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/10)| 
+|[Vista US-04](./US-04.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/4)|
+|[Vista US-05](./US-05.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/5)|
+|[Vista US-06](./US-06.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/6)| 
+|[Vista US-07](./US-07.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/7)|
+|[Vista US-08](./US-08.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/8)| 
+|[Vista US-09](./US-09.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/9)| 
+|[Vista US-10](./US-10.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/10)| 
 
 ## Diseño Arquitectónico 
 
