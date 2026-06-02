@@ -22,7 +22,10 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 
 ## 📂 Estructura del Directorio
 
-- `/api/`: Contiene la lógica principal de la aplicación, definición de endpoints y modelos de validación de datos (ej. `main.py`).
+- `/adaptadores/`: Microservicios que traducen protocolos específicos (ej. MQTT, LoRaWAN) al formato interno del sistema.
+- `/api/`: Contiene las APIs REST públicas (ej. `api_ingesta.py` para recolección, `api_perfiles.py` para configuración).
+- `/workers/`: Procesos en segundo plano (consumidores de colas) encargados del procesamiento diferido.
+- `controlador_valvulas.py`: Microservicio crítico que evalúa reglas y se comunica con el hardware actuador.
 - `/database/`: Scripts de inicialización, definición de tablas relacionales y esquemas de la base de datos (ej. `01_schema.sql`).
 
 ## 🚀 Configuración y Despliegue Rápido
@@ -31,16 +34,28 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
    - Ejecuta el script `database/01_schema.sql` en tu gestor MySQL para generar las tablas requeridas (`nodo_sensor`, `perfil_cultivo`, `medicion_historica`, `registro_valvula`).
 2. **Entorno Python**:
    - Se recomienda el uso de un entorno virtual (`venv`).
-   - Instalar dependencias base: 
+   - Instalar dependencias para microservicios y adaptadores: 
      ```bash
-     pip install fastapi uvicorn pydantic mysql-connector-python
+     pip install fastapi uvicorn pydantic aio-pika asyncpg paho-mqtt pyserial
      ```
 3. **Configuración de Credenciales**:
-   - Actualizar el diccionario `DB_CONFIG` (host, user, password, database) dentro de `api/main.py`.
-4. **Ejecución del Servidor**:
-   - Levantar la API en modo desarrollo: 
+   - Asegúrate de tener RabbitMQ corriendo y actualiza `RABBITMQ_URL` dentro de `api/api_ingesta.py`.
+4. **Ejecución de Microservicios (Terminales independientes)**:
+   - **1. API Ingesta** (Puerto 8000): 
      ```bash
-     uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+     uvicorn api.api_ingesta:app --reload --host 0.0.0.0 --port 8000
+     ```
+   - **2. API Controlador de Válvulas** (Puerto 8001): 
+     ```bash
+     uvicorn controlador_valvulas:app --reload --host 0.0.0.0 --port 8001
+     ```
+   - **3. API Históricos/Frontend** (Puerto 8002):
+     ```bash
+     uvicorn api.api_historicos:app --reload --host 0.0.0.0 --port 8002
+     ```
+   - **4. API Perfiles de Cultivo** (Puerto 8003):
+     ```bash
+     uvicorn api.api_perfiles:app --reload --host 0.0.0.0 --port 8003
      ```
 ---
 

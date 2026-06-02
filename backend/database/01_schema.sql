@@ -1,31 +1,36 @@
 -- =================================================================
 -- Script de Inicialización de Base de Datos - EcoSystems
--- Motor recomendado: MySQL / PostgreSQL
+-- Motor recomendado: PostgreSQL + TimescaleDB (Arquitectura IoT)
 -- =================================================================
 
--- (Opcional) Creación de la base de datos si no existe
-CREATE DATABASE IF NOT EXISTS ecosystems_db;
-USE ecosystems_db;
+-- Nota: En PostgreSQL, debes conectarte a la base de datos antes de ejecutar el resto
+-- CREATE DATABASE ecosystems_db;
+-- \c ecosystems_db
 
--- 1. Tabla Maestra: Registro de Nodos (Dispositivos en terreno)
-CREATE TABLE IF NOT EXISTS nodo_sensor (
-    id_nodo VARCHAR(50) PRIMARY KEY,
-    ubicacion VARCHAR(100) NOT NULL,
-    estado_activo BOOLEAN DEFAULT TRUE,
-    fecha_instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Habilitar la extensión de series de tiempo
+CREATE EXTENSION IF NOT EXISTS timescaledb;
 
--- 2. Tabla de Configuración: Perfiles de Cultivo (Ref: Issue #4)
+-- 1. Tabla de Configuración: Perfiles de Cultivo (Ref: Issue #4 y US-04)
 CREATE TABLE IF NOT EXISTS perfil_cultivo (
-    id_perfil INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil SERIAL PRIMARY KEY,
     nombre_cultivo VARCHAR(50) NOT NULL,
     humedad_min_prc INT NOT NULL, -- Umbral mínimo para encender riego
     humedad_max_prc INT NOT NULL  -- Umbral máximo para apagar riego
 );
 
--- 3. Tabla Transaccional: Historial de Mediciones
+-- 2. Tabla Maestra: Registro de Nodos (Dispositivos en terreno)
+CREATE TABLE IF NOT EXISTS nodo_sensor (
+    id_nodo VARCHAR(50) PRIMARY KEY,
+    id_perfil INT, -- Relación con el tipo de cultivo que monitorea
+    ubicacion VARCHAR(100) NOT NULL,
+    estado_activo BOOLEAN DEFAULT TRUE,
+    fecha_instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_perfil) REFERENCES perfil_cultivo(id_perfil) ON DELETE SET NULL
+);
+
+-- 3. Tabla de Series de Tiempo: Historial de Mediciones
 CREATE TABLE IF NOT EXISTS medicion_historica (
-    id_medicion INT AUTO_INCREMENT PRIMARY KEY,
+    id_medicion SERIAL,
     id_nodo VARCHAR(50) NOT NULL,
     protocolo VARCHAR(20) NOT NULL,
     humedad_suelo_prc DECIMAL(5,2) NOT NULL,
@@ -33,21 +38,35 @@ CREATE TABLE IF NOT EXISTS medicion_historica (
     flujo_agua_lpm DECIMAL(5,2) NOT NULL,
     fecha_hora TIMESTAMP NOT NULL, -- Timestamp real enviado por el hardware
     fecha_recepcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp de llegada al servidor
-    FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE CASCADE
+    FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE CASCADE,
+    PRIMARY KEY (id_medicion, fecha_hora) -- Requisito de TimescaleDB para la partición
 );
 
--- Índices para optimizar las consultas históricas de alta intensidad (US-13 y requerimiento de 10.000 req/s)
-CREATE INDEX idx_medicion_historica_fecha ON medicion_historica (fecha_hora DESC);
+-- Convertir la tabla en una Hypertable optimizada para alta ingesta (IoT)
+SELECT create_hypertable('medicion_historica', 'fecha_hora', if_not_exists => TRUE);
+
+-- Índice compuesto para acelerar los gráficos del frontend por sensor (US-13)
 CREATE INDEX idx_medicion_historica_nodo_fecha ON medicion_historica (id_nodo, fecha_hora DESC);
 
--- 4. Tabla de Auditoría: Registro de Válvulas (Ref: Issue #5)
+-- 4. Tabla de Actuadores: Control de Válvulas
+CREATE TABLE IF NOT EXISTS valvula_control (
+    id_valvula SERIAL PRIMARY KEY,
+    id_nodo VARCHAR(50), -- Sensor asociado a la zona que riega esta válvula
+    nombre_valvula VARCHAR(100) NOT NULL,
+    estado_actual VARCHAR(20) DEFAULT 'CERRADA',
+    ubicacion_especifica VARCHAR(100),
+    FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE SET NULL
+);
+
+-- 5. Tabla de Auditoría: Registro de Válvulas (Ref: Issue #5 y US-11)
 CREATE TABLE IF NOT EXISTS registro_valvula (
-    id_registro INT AUTO_INCREMENT PRIMARY KEY,
-    id_nodo VARCHAR(50) NOT NULL,
+    id_registro SERIAL PRIMARY KEY,
+    id_valvula INT NOT NULL,
     accion VARCHAR(20) NOT NULL,  -- Valores esperados: 'ABRIR' o 'CERRAR'
     motivo VARCHAR(100) NOT NULL, -- Ej: 'Automático - Umbral bajo' o 'Manual'
+    latencia_ms INT,              -- Para auditar el cumplimiento del límite < 100ms (REF-01)
     fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE CASCADE
+    FOREIGN KEY (id_valvula) REFERENCES valvula_control(id_valvula) ON DELETE CASCADE
 );
 
 -- =================================================================
