@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "nombre": "Happy Path - Obtener todas las valvulas",
+    "metodo": "GET",
+    "url": "http://localhost:8000/api/valvulas",
+    "descripcion": "Verifica que el sistema liste correctamente los dispositivos de monitoreo."
+  },
+  {
+    "id": 2,
+    "nombre": "Happy Path - Abrir valvula con parametros validos",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": 1, "tiempo_minutos": 15 },
+    "descripcion": "Apertura estandar dentro de los rangos normales de operacion."
+  },
+  {
+    "id": 3,
+    "nombre": "Valor Limite - Error por tiempo negativo",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": 1, "tiempo_minutos": -5 },
+    "descripcion": "Prueba de robustez enviando un limite inferior invalido."
+  },
+  {
+    "id": 4,
+    "nombre": "Valor Limite - Error por tiempo excesivo",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": 1, "tiempo_minutos": 9999 },
+    "descripcion": "Prueba de robustez enviando un limite superior desbordado."
+  },
+  {
+    "id": 5,
+    "nombre": "Logica de Negocio - Error ID de valvula inexistente",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": 999, "tiempo_minutos": 10 },
+    "descripcion": "Verifica el manejo de errores cuando el dispositivo no esta registrado."
+  },
+  {
+    "id": 6,
+    "nombre": "Clase de Equivalencia - Error por tipo de dato texto",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": "VALVULA_A", "tiempo_minutos": "diez" },
+    "descripcion": "Inyeccion de strings en campos que estrictamente requieren enteros."
+  },
+  {
+    "id": 7,
+    "nombre": "Happy Path - Forzar parada de emergencia global",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/sistema/parada-emergencia",
+    "body": { "status": true },
+    "descripcion": "Corta la operacion logica del backend de forma inmediata."
+  },
+  {
+    "id": 8,
+    "nombre": "Logica de Negocio - Bloqueo de apertura en parada de emergencia",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": { "valvula_id": 2, "tiempo_minutos": 5 },
+    "descripcion": "Comprueba que la API rechace comandos si la emergencia esta activa."
+  },
+  {
+    "id": 9,
+    "nombre": "Happy Path - Obtener historial de registros (logs)",
+    "metodo": "GET",
+    "url": "http://localhost:8000/api/valvulas/logs",
+    "descripcion": "Recupera la auditoria de eventos registrados por el controlador."
+  },
+  {
+    "id": 10,
+    "nombre": "Clase de Equivalencia - Error por cuerpo de peticion vacio",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/valvulas/abrir",
+    "body": {},
+    "descripcion": "Verifica la respuesta del servidor ante la ausencia de parametros."
+  }
+]
