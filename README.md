@@ -1,20 +1,64 @@
 # Proyecto-EcoSystems: Optimización de Riego mediante IoT e IA
 
-Miembros:           
-* Joaquin Molina - Responsable de Backend (Gestión de Datos)
-* Bruno Diaz - Responsable de Hardware (Obtención de Datos)
-* Jorge Bahamondes - Responsable de Frontend (Interfaz de Gestión y Control)
+## Descripción del sistema 
 
-La Región de Valparaíso enfrenta una crisis hídrica. En un escenario de escasez, los métodos de riego tradicionales resultan ineficientes, provocando un desperdicio crítico de recursos. Existe una necesidad urgente de tecnificar el agro regional para asegurar la sostenibilidad de la producción local.
+Proyecto-EcoSystems nació de una necesidad bastante concreta: enfrentar la crisis hídrica en la Región de Valparaíso. En un escenario de escasez severa, los métodos de riego tradicionales resultan ineficientes, provocando un desperdicio crítico de recursos que pone en riesgo la sostenibilidad del agro regional.
 
-Se propone el desarrollo de un sistema integral de Internet de las Cosas (IoT) y Ánalisis de Datos diseñados para optimizar el consumo hídrico en tiempo real. El sistema genera una automatización del riego, transformando la gestión del campo en una operación basada en datos recogidos en tiempo real.
+Se propone el desarrollo de un sistema integral de Internet de las Cosas (IoT) y Análisis de Datos diseñado para optimizar el consumo hídrico en tiempo real. El sistema genera una automatización del riego, transformando la gestión del campo en una operación basada en datos recogidos en tiempo real.
 
-Para materializar esta solución, el proyecto se divide en tres pilares:
-1. Hardware y Obtención de datos: Implementación de una red de sensores basados en Arduino para la medición de humedad en el suelo, temperatura y flujo de agua en tiempo real.
-2. Gestión de Datos: Centralización de la información en una base de datos, permitiendo el almacenamiento histórico para realizar comparativas de eficiencia entre distintos periodos de siembra.
-3. Inteligencia y Analítica:
-   * Modelos Predictivos: Uso de IA para procesar los datos obtenidos y predecir necesidades futuras de riego según el clima y el estado del suelo.
-   * Proyecciones Financieras: Módulo de cálculo de costos para estimar el gasto hídrico y económico, permitiendo una planificación presupuestaria eficiente.
+Para materializar esta solución, el proyecto se divide en tres pilares esenciales:
+1. **Hardware y Obtención de datos:** Implementación de una red de sensores basados en Arduino para la medición de humedad en el suelo, temperatura y flujo de agua en tiempo real.
+2. **Gestión de Datos:** Centralización de la información en una base de datos, permitiendo el almacenamiento histórico para realizar comparativas de eficiencia entre distintos periodos de siembra.
+3. **Inteligencia y Analítica:** Uso de IA para modelos predictivos del clima/suelo y un módulo de proyecciones financieras para la planificación presupuestaria eficiente del gasto hídrico.
+
+## Historias de Usuario 
+
+| ID   | Nombre                                         | Issue  | 
+|------|------------------------------------------------|--------| 
+| US-01 | Reporte mensual de consumo de agua para análisis e costos                     | #1 | 
+| US-02 | Almacenamiento histórico de lecturas de sensores en la base de datos          | #2 | 
+| US-03 | Control automático de riego según umbrales de humedad                         | #3 | 
+| US-04 | Gestión de perfiles de humedad por tipo de cultivo                            | #4 | 
+| US-05 | Registro de auditoria (log) para el control de válvulas                       | #5 |
+| US-06 | Panel de registro y monitoreo de errores del sistema (Logs)                   | #6 |
+| US-07 | Atributo que aplican al proyecto                                              | #7 |
+| US-8 | Dashboard de gráficos históricos e interactivos de humedad y riego             | #8 |
+| US-9 | Generación de recomendaciones de riego basadas en pronóstico climático e IA    | #9 |
+| US-10 | [DOC] Definición e Integración del Bosquejo de Arquitectura General           | #10  |
 
 
-Figma: https://dig-cotton-96586616.figma.site/
+## Requisitos Extrafuncionales 
+
+Ver: [Reqextrafuncionales.md](./Reqextrafuncionales.md)
+
+## Entidades del Dominio 
+
+Ver: [modelo_dominio.md](./modelo_dominio.md)
+
+## Mockups 
+Enlace de figma: https://flick-vector-39224673.figma.site
+
+| Mockup | Historia de usuario relacionada                                   |
+|--------|-------------------------------------------------------------------|
+|[Vista US-01](./US-01.md)|[#Issue 1](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/1)|
+|[Vista US-02](./US-02.md)|[#Issue 2](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/2)|
+|[Vista US-03](./US-03.md)|[#Issue 3](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/3)| 
+|[Vista US-04](./US-04.md)|[#Issue 4](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/4)|
+|[Vista US-05](./US-05.md)|[#Issue 5](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/5)|
+|[Vista US-06](./US-06.md)|[#Issue 6](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/6)| 
+|[Vista US-07](./US-07.md)|[#Issue 7](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/7)|
+|[Vista US-08](./US-08.md)|[#Issue 8](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/8)| 
+|[Vista US-09](./US-09.md)|[#Issue 9](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/9)| 
+|[Vista US-10](./US-10.md)|[#Issue 10](https://github.com/equipo-f-software-uv/Proyecto-EcoSystems/issues/10)| 
+
+## Diseño Arquitectónico 
+
+Ver: [Arquitectura.md](./Arquitectura.md)
+ 
+## Responsabilidades del Equipo 
+
+| Integrante      | Rol         | Ítems de la rúbrica a cargo| 
+|----------------|-------------|----------------------------|
+| Joaquin Molina | Backend Developer | Gestión de Datos, Base de Datos, API |
+| Bruno Diaz | Hardware Developer | Obtención de Datos, Conectividad IoT, Sensores Arduino |
+| Jorge Bahamondes | Frontend Developer | Interfaz de Gestión y Control, UI/UX Mockups |
