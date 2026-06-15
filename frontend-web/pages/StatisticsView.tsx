@@ -1,7 +1,8 @@
 import { BarChart3, Droplets, TrendingDown, Calendar, Percent } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 // Datos simulados para los últimos 7 días (US-13)
-const weeklyData = [
+const mockWeeklyData = [
   { day: 'Lun', water: 120, humidity: 65 },
   { day: 'Mar', water: 85, humidity: 68 },
   { day: 'Mie', water: 0, humidity: 75 }, // Día de lluvia simulado
@@ -12,9 +13,44 @@ const weeklyData = [
 ];
 
 export function StatisticsView() {
-  const maxWater = Math.max(...weeklyData.map((d) => d.water));
+  const [weeklyData, setWeeklyData] = useState(mockWeeklyData);
+
+  useEffect(() => {
+    // Consumir la API real del backend (Node.js) para obtener históricos
+    const fetchEstadisticas = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/estadisticas');
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.data && result.data.length > 0) {
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+            
+            const formattedData = result.data.map((item: any) => {
+              // Parseamos la fecha asegurando formato correcto
+              const dateObj = new Date(item.date + 'T00:00:00');
+              return {
+                day: diasSemana[dateObj.getDay()],
+                water: Math.round(item.water || 0),
+                humidity: Math.round(item.humidity || 0)
+              };
+            });
+            
+            setWeeklyData(formattedData);
+          }
+        }
+      } catch (error) {
+        console.error("Error conectando con la API, usando mock fallback:", error);
+      }
+    };
+
+    fetchEstadisticas();
+  }, []);
+
+  // Evitamos divisiones por cero con Math.max(1) por si no hay consumo de agua aún
+  const maxWater = Math.max(1, ...weeklyData.map((d) => d.water));
   const totalWater = weeklyData.reduce((acc, curr) => acc + curr.water, 0);
-  const avgHumidity = Math.round(weeklyData.reduce((acc, curr) => acc + curr.humidity, 0) / weeklyData.length);
+  const avgHumidity = Math.round(weeklyData.reduce((acc, curr) => acc + curr.humidity, 0) / (weeklyData.length || 1));
 
   return (
     <div className="pb-6">
