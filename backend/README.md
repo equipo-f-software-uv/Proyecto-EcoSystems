@@ -8,9 +8,9 @@ El objetivo principal de este módulo es centralizar la información proveniente
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Framework API**: Express.js (Node.js) - Elegido por su alto rendimiento, naturaleza asíncrona (Event Loop) y escalabilidad nativa para soportar alta concurrencia.
-- **Base de Datos**: MySQL (esquemas relacionales definidos en scripts SQL).
-- **Conector**: `mysql2` (Implementando Pool de Conexiones para mitigar la saturación de conexiones concurrentes).
+- **Framework API**: **Express.js (Node.js)** - Arquitectura asíncrona impulsada por eventos, ideal para operaciones I/O intensivas (IoT).
+- **Base de Datos**: **PostgreSQL con TimescaleDB** - Optimizado para alta ingesta y consultas de series de tiempo (IoT).
+- **Comunicación Asíncrona**: **RabbitMQ** (a través de `amqplib`) para desacoplar la ingesta de la persistencia.
 
 ## 🏗️ Arquitectura y Requerimientos Críticos
 
@@ -31,31 +31,31 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 ## 🚀 Configuración y Despliegue Rápido
 
 1. **Base de Datos**:
-   - Ejecuta el script `database/01_schema.sql` en tu gestor MySQL para generar las tablas requeridas (`nodo_sensor`, `perfil_cultivo`, `medicion_historica`, `registro_valvula`).
-2. **Entorno Python**:
-   - Se recomienda el uso de un entorno virtual (`venv`).
+   - Ejecuta el script `database/01_schema.sql` en tu gestor **PostgreSQL** para generar las tablas requeridas (`nodo_sensor`, `perfil_cultivo`, `medicion_historica`, `registro_valvula`).
+2. **Entorno Node.js**:
+   - Asegúrate de tener Node.js instalado (v18+).
    - Instalar dependencias para microservicios y adaptadores: 
      ```bash
-     pip install fastapi uvicorn pydantic aio-pika asyncpg paho-mqtt pyserial
+     npm install
      ```
 3. **Configuración de Credenciales**:
    - Asegúrate de tener RabbitMQ corriendo y actualiza `RABBITMQ_URL` dentro de `api/api_ingesta.py`.
 4. **Ejecución de Microservicios (Terminales independientes)**:
    - **1. API Ingesta** (Puerto 8000): 
      ```bash
-     uvicorn api.api_ingesta:app --reload --host 0.0.0.0 --port 8000
+     npm run start:ingesta
      ```
    - **2. API Controlador de Válvulas** (Puerto 8001): 
      ```bash
-     uvicorn controlador_valvulas:app --reload --host 0.0.0.0 --port 8001
+     npm run start:valvulas
      ```
    - **3. API Históricos/Frontend** (Puerto 8002):
      ```bash
-     uvicorn api.api_historicos:app --reload --host 0.0.0.0 --port 8002
+     npm run start:historicos
      ```
    - **4. API Perfiles de Cultivo** (Puerto 8003):
      ```bash
-     uvicorn api.api_perfiles:app --reload --host 0.0.0.0 --port 8003
+     npm run start:perfiles
      ```
 ---
 

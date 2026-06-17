@@ -15,31 +15,29 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Mapear el script SQL: Postgres lo ejecuta automáticamente al iniciar por primera vez
       - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: ecosystems_rabbitmq
     ports:
-      - "5672:5672"   # Puerto de mensajería AMQP
-      - "15672:15672" # Interfaz web de RabbitMQ
+      - "5672:5672"
+      - "15672:15672"
 
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: ecosystems_mqtt
     ports:
       - "1883:1883"
-    # Comando rápido para permitir conexiones locales sin contraseña en dev
     command: sh -c "echo 'listener 1883\nallow_anonymous true' > /mosquitto/config/mosquitto.conf && mosquitto -c /mosquitto/config/mosquitto.conf"
 
   # --------------------------------------------------------
-  # 2. MICROSERVICIOS PYTHON
+  # 2. MICROSERVICIOS NODE.JS (APIs)
   # --------------------------------------------------------
   api_ingesta:
-    build: .
+    build: ./node-api
     container_name: ecosystems_api_ingesta
-    command: uvicorn api.api_ingesta:app --host 0.0.0.0 --port 8000
+    command: npm run start:ingesta
     ports:
       - "8000:8000"
     depends_on:
@@ -48,9 +46,9 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
 
   api_historicos:
-    build: .
+    build: ./node-api
     container_name: ecosystems_api_historicos
-    command: uvicorn api.api_historicos:app --host 0.0.0.0 --port 8002
+    command: npm run start:historicos
     ports:
       - "8002:8002"
     depends_on:
@@ -59,9 +57,9 @@ services:
       - DB_HOST=db
 
   api_perfiles:
-    build: .
+    build: ./node-api
     container_name: ecosystems_api_perfiles
-    command: uvicorn api.api_perfiles:app --host 0.0.0.0 --port 8003
+    command: npm run start:perfiles
     ports:
       - "8003:8003"
     depends_on:
@@ -69,8 +67,24 @@ services:
     environment:
       - DB_HOST=db
 
+  controlador_valvulas:
+    build: ./node-api
+    container_name: ecosystems_controlador_valvulas
+    command: npm run start:valvulas
+    ports:
+      - "8001:8001"
+    depends_on:
+      - rabbitmq
+      - db
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - DB_HOST=db
+
+  # --------------------------------------------------------
+  # 3. MICROSERVICIOS PYTHON (Workers & Adapters)
+  # --------------------------------------------------------
   worker_historicos:
-    build: .
+    build: ./python-services
     container_name: ecosystems_worker
     command: python workers/worker_historicos.py
     depends_on:
@@ -81,7 +95,7 @@ services:
       - DB_HOST=db
 
   adaptador_mqtt:
-    build: .
+    build: ./python-services
     container_name: ecosystems_adaptador_mqtt
     command: python adaptadores/adaptador_mqtt.py
     depends_on:
