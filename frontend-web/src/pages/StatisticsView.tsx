@@ -19,7 +19,7 @@ export function StatisticsView() {
     // Consumir la API real del backend (Node.js) para obtener históricos
     const fetchEstadisticas = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/estadisticas');
+        const response = await fetch('http://localhost:8002/api/estadisticas');
         if (response.ok) {
           const result = await response.json();
           
