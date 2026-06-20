@@ -1,0 +1,14 @@
+node_modules
+.env
+*.log
+.git
+.gitignore
+.dockerignore
+docker-compose.yml
+.env.example
+database
+frontend-web
+frontend-mobile
+docs
+arduino
+openspec
