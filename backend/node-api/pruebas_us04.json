@@ -1,0 +1,81 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-04 Happy Path - Crear Perfil Palto",
+    "metodo": "POST",
+    "url": "http://localhost:8003/api/crop-profiles",
+    "body": { "cropName": "Palto", "minHumidity": 40, "maxHumidity": 70 },
+    "descripcion": "Creación exitosa de un perfil de cultivo. Espera 201 Created."
+  },
+  {
+    "id": 2,
+    "nombre": "US-04 Validación - Humedad Min >= Max",
+    "metodo": "POST",
+    "url": "http://localhost:8003/api/crop-profiles",
+    "body": { "cropName": "Tomate", "minHumidity": 60, "maxHumidity": 50 },
+    "descripcion": "Rechazo por datos inconsistentes (min >= max). Espera 400 Bad Request."
+  },
+  {
+    "id": 3,
+    "nombre": "US-04 Validación - Valores Negativos",
+    "metodo": "POST",
+    "url": "http://localhost:8003/api/crop-profiles",
+    "body": { "cropName": "Lechuga", "minHumidity": -5, "maxHumidity": 40 },
+    "descripcion": "Rechazo por valores fuera de rango (negativos). Espera 400 Bad Request."
+  },
+  {
+    "id": 4,
+    "nombre": "US-04 Validación - Campos Faltantes",
+    "metodo": "POST",
+    "url": "http://localhost:8003/api/crop-profiles",
+    "body": { "cropName": "Cebolla" },
+    "descripcion": "Rechazo por falta de parámetros obligatorios. Espera 400 Bad Request."
+  },
+  {
+    "id": 5,
+    "nombre": "US-04 Conflicto - Perfil Duplicado",
+    "metodo": "POST",
+    "url": "http://localhost:8003/api/crop-profiles",
+    "body": { "cropName": "Palto", "minHumidity": 30, "maxHumidity": 60 },
+    "descripcion": "Error al intentar crear un perfil con un nombre ya existente. Espera 409 Conflict."
+  },
+  {
+    "id": 6,
+    "nombre": "US-04 Happy Path - Asignar Perfil a Sector",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/sectors/NODO_VALPO_01/profile",
+    "body": { "profileId": 1 },
+    "descripcion": "Asociación exitosa de un perfil a un nodo sensor. Espera 200 OK."
+  },
+  {
+    "id": 7,
+    "nombre": "US-04 Error - Perfil no existe",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/sectors/NODO_VALPO_01/profile",
+    "body": { "profileId": 999 },
+    "descripcion": "Error al intentar asignar un perfil que no existe. Espera 404 Not Found."
+  },
+  {
+    "id": 8,
+    "nombre": "US-04 Error - Sector no existe",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/sectors/SECTOR_FANTASMA/profile",
+    "body": { "profileId": 1 },
+    "descripcion": "Error al intentar asignar un perfil a un nodo que no existe. Espera 404 Not Found."
+  },
+  {
+    "id": 9,
+    "nombre": "US-04 Error - Falta profileId en asignación",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/sectors/NODO_VALPO_01/profile",
+    "body": {},
+    "descripcion": "Rechazo por cuerpo de petición incompleto. Espera 400 Bad Request."
+  },
+  {
+    "id": 10,
+    "nombre": "US-04 Happy Path - Listar Perfiles",
+    "metodo": "GET",
+    "url": "http://localhost:8003/api/perfiles",
+    "descripcion": "Obtiene la lista completa de perfiles registrados. Espera 200 OK."
+  }
+]

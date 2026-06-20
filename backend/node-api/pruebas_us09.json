@@ -1,0 +1,73 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-09 Happy Path - Recomendación Exitosa",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_VALPO_01",
+    "descripcion": "Consulta exitosa a la API climática. Retorna 200 OK con ajuste y motivo."
+  },
+  {
+    "id": 2,
+    "nombre": "US-09 Modo Degradado - Fallo API Externa (Con Caché)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_VALPO_01&simulateFailure=true",
+    "descripcion": "Simula caída de la API climática. Retorna 200 OK usando la caché previa y muestra un warning."
+  },
+  {
+    "id": 3,
+    "nombre": "US-09 Modo Degradado - Fallo API Externa (Sin Caché)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_NUEVO_02&simulateFailure=true",
+    "descripcion": "Simula caída sin caché previo. Retorna 200 OK con recomendación segura (MAINTAIN) y warning."
+  },
+  {
+    "id": 4,
+    "nombre": "US-09 Validación - Sector Inexistente",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_FANTASMA",
+    "descripcion": "Rechazo porque el sector no existe en la base de datos. Espera 404 Not Found."
+  },
+  {
+    "id": 5,
+    "nombre": "US-09 Validación - Parámetro Faltante",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations",
+    "descripcion": "Rechazo por falta de parámetro obligatorio sectorId. Espera 400 Bad Request."
+  },
+  {
+    "id": 6,
+    "nombre": "US-09 Robustez - Persistencia Asíncrona (Verificación visual)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_VALPO_01",
+    "descripcion": "Ejecuta de nuevo para asegurar que la inserción fire-and-forget no bloquea la respuesta 200 OK."
+  },
+  {
+    "id": 7,
+    "nombre": "US-09 Auditoría - Verificar Log de Conexión",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Comprueba en el panel de errores (US-06) que el fallo simulado generó un log de tipo CONEXION."
+  },
+  {
+    "id": 8,
+    "nombre": "US-09 Clase de Equivalencia - ID Sector numérico",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=123",
+    "descripcion": "Prueba con ID numérico que no existe en BD para asegurar que el validador maneja bien los tipos. Espera 404."
+  },
+  {
+    "id": 9,
+    "nombre": "US-09 Happy Path - Otro nodo",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_VALPO_01",
+    "descripcion": "Segunda llamada exitosa para asentar otra recomendación en la BD."
+  },
+  {
+    "id": 10,
+    "nombre": "US-09 Rendimiento - Respuesta bajo degradación",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/recommendations?sectorId=NODO_VALPO_01&simulateFailure=true",
+    "descripcion": "El tiempo de respuesta debe ser rápido a pesar del error de red atrapado."
+  }
+]

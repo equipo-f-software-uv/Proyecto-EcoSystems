@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-Manual Happy Path - Consulta de Estado (Status)",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valves/1/status",
+    "descripcion": "Verifica el estado actual de la válvula 1. Espera 200 OK con JSON de modo y estado."
+  },
+  {
+    "id": 2,
+    "nombre": "US-Manual Happy Path - Override Manual (Abrir)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/override",
+    "body": { "action": "ABRIR", "operatorId": "admin_bruno" },
+    "descripcion": "Fuerza la apertura de la válvula y activa el bloqueo manual. Espera 200 OK."
+  },
+  {
+    "id": 3,
+    "nombre": "US-Manual Verificación - Estado post Override",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valves/1/status",
+    "descripcion": "Comprueba que la válvula 1 ahora tiene mode=MANUAL y overrideActive=true."
+  },
+  {
+    "id": 4,
+    "nombre": "US-Manual Error - Desconexión Hardware (Timeout)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/2/override",
+    "body": { "action": "ABRIR", "operatorId": "admin_bruno", "simulateTimeout": true },
+    "descripcion": "Simula fallo de hardware. Espera 504 Gateway Timeout y anulación de cambios en BD."
+  },
+  {
+    "id": 5,
+    "nombre": "US-Manual Verificación - Rollback tras Timeout",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valves/2/status",
+    "descripcion": "Verifica que la válvula 2 no cambió a MANUAL ni se bloqueó debido al fallo anterior."
+  },
+  {
+    "id": 6,
+    "nombre": "US-Manual Validación - Acción Inválida",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/override",
+    "body": { "action": "ROMPER", "operatorId": "admin_bruno" },
+    "descripcion": "Rechazo por acción no permitida. Espera 400 Bad Request."
+  },
+  {
+    "id": 7,
+    "nombre": "US-Manual Validación - Operador Faltante",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/override",
+    "body": { "action": "CERRAR" },
+    "descripcion": "Rechazo por falta del campo operatorId. Espera 400 Bad Request."
+  },
+  {
+    "id": 8,
+    "nombre": "US-Manual Happy Path - Restaurar Automático (Auto)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/auto",
+    "body": {},
+    "descripcion": "Devuelve la válvula a control automático, quitando el override. Espera 200 OK."
+  },
+  {
+    "id": 9,
+    "nombre": "US-Manual Robustez - Override Válvula Inexistente",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/999/override",
+    "body": { "action": "ABRIR", "operatorId": "admin_bruno" },
+    "descripcion": "Error al intentar controlar una válvula que no existe. Espera 404 Not Found."
+  },
+  {
+    "id": 10,
+    "nombre": "US-Manual Auditoría - Verificar Log Manual",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valve-logs?valveId=1",
+    "descripcion": "Comprueba que la acción manual del test 2 haya generado un log (US-05)."
+  }
+]

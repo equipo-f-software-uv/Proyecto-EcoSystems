@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-pydantic
-aio-pika
-asyncpg
-paho-mqtt
-pyserial

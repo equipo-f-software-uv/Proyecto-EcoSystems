@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-01 Happy Path - Reporte Mayo 2026",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=05&year=2026",
+    "descripcion": "Solicitud válida para un mes con registros. Se espera sumatoria y costo estimado."
+  },
+  {
+    "id": 2,
+    "nombre": "US-01 Período sin datos - Enero 2026",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=01&year=2026",
+    "descripcion": "Solicitud válida pero para un mes sin datos. Se espera mensaje controlado."
+  },
+  {
+    "id": 3,
+    "nombre": "US-01 Valor Límite - Mes fuera de rango (13)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=13&year=2026",
+    "descripcion": "Error 400 por mes inexistente (límite superior)."
+  },
+  {
+    "id": 4,
+    "nombre": "US-01 Valor Límite - Mes fuera de rango (0)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=0&year=2026",
+    "descripcion": "Error 400 por mes inexistente (límite inferior)."
+  },
+  {
+    "id": 5,
+    "nombre": "US-01 Clase de Equivalencia - Mes como texto",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=mayo&year=2026",
+    "descripcion": "Error 400 por enviar nombre del mes en vez de número."
+  },
+  {
+    "id": 6,
+    "nombre": "US-01 Valor Límite - Año formato corto (26)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=05&year=26",
+    "descripcion": "Error 400 por año con formato incorrecto (requiere 4 dígitos)."
+  },
+  {
+    "id": 7,
+    "nombre": "US-01 Valor Límite - Año futuro lejano",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=05&year=10000",
+    "descripcion": "Error 400 por año con más de 4 dígitos."
+  },
+  {
+    "id": 8,
+    "nombre": "US-01 Clase de Equivalencia - Año como texto",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=05&year=dosmilveintiseis",
+    "descripcion": "Error 400 por enviar año como string no numérico."
+  },
+  {
+    "id": 9,
+    "nombre": "US-01 Parámetro faltante - Sin mes",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?year=2026",
+    "descripcion": "Error 400 por ausencia del parámetro obligatorio 'month'."
+  },
+  {
+    "id": 10,
+    "nombre": "US-01 Parámetro faltante - Sin año",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/reports/monthly?month=05",
+    "descripcion": "Error 400 por ausencia del parámetro obligatorio 'year'."
+  }
+]

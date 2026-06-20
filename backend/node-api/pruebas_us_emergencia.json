@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-Emergencia Happy Path - Activar Parada",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/activate",
+    "body": { "reason": "Fuga de agua en matriz principal", "operatorId": "admin_jorge" },
+    "descripcion": "Activa la parada de emergencia y cierra todas las válvulas. Espera 200 OK."
+  },
+  {
+    "id": 2,
+    "nombre": "US-Emergencia Conflicto - Redundancia de Activación",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/activate",
+    "body": { "reason": "Doble clic accidental", "operatorId": "admin_jorge" },
+    "descripcion": "Evita sobreescribir la BD si la emergencia ya está activa. Espera 409 Conflict."
+  },
+  {
+    "id": 3,
+    "nombre": "US-Emergencia Bloqueo Transversal - Intento Manual",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/override",
+    "body": { "action": "ABRIR", "operatorId": "admin_bruno" },
+    "descripcion": "Rechazo de intento manual de abrir válvula durante emergencia. Espera 403 Forbidden."
+  },
+  {
+    "id": 4,
+    "nombre": "US-Emergencia Validación - Operador Faltante (Activar)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/activate",
+    "body": { "reason": "Prueba error" },
+    "descripcion": "Rechazo por falta de operatorId. Espera 400 Bad Request."
+  },
+  {
+    "id": 5,
+    "nombre": "US-Emergencia Validación - Motivo Faltante (Activar)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/activate",
+    "body": { "operatorId": "admin_jorge" },
+    "descripcion": "Rechazo por falta de reason. Espera 400 Bad Request."
+  },
+  {
+    "id": 6,
+    "nombre": "US-Emergencia Happy Path - Desactivar Parada",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/deactivate",
+    "body": { "operatorId": "admin_bruno" },
+    "descripcion": "Remueve el estado de emergencia global. Espera 200 OK."
+  },
+  {
+    "id": 7,
+    "nombre": "US-Emergencia Conflicto - Redundancia de Desactivación",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/deactivate",
+    "body": { "operatorId": "admin_bruno" },
+    "descripcion": "Evita sobreescribir la BD si el sistema ya está normal (ACTIVE). Espera 409 Conflict."
+  },
+  {
+    "id": 8,
+    "nombre": "US-Emergencia Validación - Operador Faltante (Desactivar)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/system/emergency-stop/deactivate",
+    "body": {},
+    "descripcion": "Rechazo por falta de operatorId al intentar desactivar. Espera 400 Bad Request."
+  },
+  {
+    "id": 9,
+    "nombre": "US-Emergencia Permitido - Cierre Manual durante Emergencia",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valves/1/override",
+    "body": { "action": "CERRAR", "operatorId": "admin_jorge" },
+    "descripcion": "El bloqueo transversal prohíbe ABRIR, pero permite forzar CERRAR como medida de seguridad."
+  },
+  {
+    "id": 10,
+    "nombre": "US-Emergencia Auditoría - Verificar Log Global",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Comprueba en el panel de errores (US-06) que la activación/desactivación generó un log tipo SISTEMA."
+  }
+]
