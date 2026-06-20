@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-06 Happy Path - Acceso Panel Errores (Admin)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Acceso exitoso al listado de errores con rol Administrador. Espera 200 OK."
+  },
+  {
+    "id": 2,
+    "nombre": "US-06 Error - Acceso Denegado (Sin Rol)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "descripcion": "Rechazo de acceso por falta de rol en los headers. Espera 403 Forbidden."
+  },
+  {
+    "id": 3,
+    "nombre": "US-06 Error - Acceso Denegado (Rol Incorrecto)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Operador" },
+    "descripcion": "Rechazo de acceso por rol insuficiente. Espera 403 Forbidden."
+  },
+  {
+    "id": 4,
+    "nombre": "US-06 Captura 500 - Provocar Error Crítico",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/debug/error",
+    "descripcion": "Provoca una excepción para validar que el middleware la capture y retorne un 500 genérico."
+  },
+  {
+    "id": 5,
+    "nombre": "US-06 Verificación - Error Registrado",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Verifica que el error provocado en el paso anterior se encuentre en la base de datos."
+  },
+  {
+    "id": 6,
+    "nombre": "US-06 Sanitización - Ocultar Secretos",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Comprueba que la respuesta no contenga campos sensibles como tokens o passwords (sanitización de salida)."
+  },
+  {
+    "id": 7,
+    "nombre": "US-06 Monitoreo - Hardware Desconectado",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Busca logs de tipo 'HARDWARE' generados por el servicio de monitoreo de conectividad."
+  },
+  {
+    "id": 8,
+    "nombre": "US-06 Orden - Cronológico Descendente",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Valida que el primer elemento del JSON sea el error más reciente."
+  },
+  {
+    "id": 9,
+    "nombre": "US-06 Robustez - Error en Base de Datos",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Verifica que el sistema responda 500 si falla la consulta (simulado en el catch del endpoint)."
+  },
+  {
+    "id": 10,
+    "nombre": "US-06 Veracidad - Timestamp del Servidor",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/system-errors",
+    "headers": { "X-User-Role": "Administrador" },
+    "descripcion": "Verifica que cada error tenga una fecha_hora asignada automáticamente por el backend."
+  }
+]

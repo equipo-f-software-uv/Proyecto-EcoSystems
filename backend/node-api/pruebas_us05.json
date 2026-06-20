@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-05 Happy Path - Registro Auditoría ABRIR",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": { "valveId": 1, "action": "ABRIR", "reason": "Mantenimiento preventivo" },
+    "descripcion": "Registro exitoso de apertura. Espera 201 Created."
+  },
+  {
+    "id": 2,
+    "nombre": "US-05 Happy Path - Registro Auditoría CERRAR",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": { "valveId": 1, "action": "CERRAR", "reason": "Fin de prueba mecánica" },
+    "descripcion": "Registro exitoso de cierre. Espera 201 Created."
+  },
+  {
+    "id": 3,
+    "nombre": "US-05 Validación - Acción Inválida",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": { "valveId": 1, "action": "REPARAR", "reason": "Acción no permitida" },
+    "descripcion": "Rechazo por acción fuera de catálogo (ABRIR/CERRAR). Espera 400 Bad Request."
+  },
+  {
+    "id": 4,
+    "nombre": "US-05 Validación - Campos Faltantes (Sin action)",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": { "valveId": 1, "reason": "Error intencional" },
+    "descripcion": "Rechazo por falta de campo obligatorio. Espera 400 Bad Request."
+  },
+  {
+    "id": 5,
+    "nombre": "US-05 Validación - Válvula Inexistente",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": { "valveId": 999, "action": "ABRIR", "reason": "ID fantasma" },
+    "descripcion": "Rechazo porque el ID de la válvula no existe en la BD. Espera 404 Not Found."
+  },
+  {
+    "id": 6,
+    "nombre": "US-05 Happy Path - Consultar Historial",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valve-logs?valveId=1",
+    "descripcion": "Obtiene la lista cronológica de eventos para la válvula 1. Espera 200 OK."
+  },
+  {
+    "id": 7,
+    "nombre": "US-05 Validación - Consultar Válvula Inexistente",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valve-logs?valveId=999",
+    "descripcion": "Error 404 al intentar ver logs de una válvula que no existe. Espera 404 Not Found."
+  },
+  {
+    "id": 8,
+    "nombre": "US-05 Validación - GET sin parámetro valveId",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "descripcion": "Rechazo por parámetro de consulta faltante. Espera 400 Bad Request."
+  },
+  {
+    "id": 9,
+    "nombre": "US-05 Validación - Payload Vacío",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/v1/valve-logs",
+    "body": {},
+    "descripcion": "Rechazo por cuerpo de petición vacío. Espera 400 Bad Request."
+  },
+  {
+    "id": 10,
+    "nombre": "US-05 Robustez - Válvula ID como texto en GET",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/v1/valve-logs?valveId=abc",
+    "descripcion": "Manejo de error 404 o 400 al enviar un ID no numérico."
+  }
+]

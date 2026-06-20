@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-02 Happy Path - Registro Humedad",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "humedad", "value": 45.5 },
+    "descripcion": "Registro válido de humedad dentro del rango (0-100). Espera 201 Created."
+  },
+  {
+    "id": 2,
+    "nombre": "US-02 Happy Path - Registro Temperatura",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "temperatura", "value": 22.3 },
+    "descripcion": "Registro válido de temperatura dentro del rango (-50 a 100). Espera 201 Created."
+  },
+  {
+    "id": 3,
+    "nombre": "US-02 Validación - Humedad negativa",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "humedad", "value": -5 },
+    "descripcion": "Rechazo por valor de humedad inválido (límite inferior). Espera 400 Bad Request."
+  },
+  {
+    "id": 4,
+    "nombre": "US-02 Validación - Humedad sobre 100",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "humedad", "value": 105 },
+    "descripcion": "Rechazo por valor de humedad inválido (límite superior). Espera 400 Bad Request."
+  },
+  {
+    "id": 5,
+    "nombre": "US-02 Validación - Temperatura extrema",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "temperatura", "value": 150 },
+    "descripcion": "Rechazo por valor de temperatura fuera de rango físico razonable. Espera 400 Bad Request."
+  },
+  {
+    "id": 6,
+    "nombre": "US-02 Campos Faltantes - Sin nodeId",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "sensorType": "humedad", "value": 50 },
+    "descripcion": "Rechazo por ausencia de campo obligatorio nodeId. Espera 400 Bad Request."
+  },
+  {
+    "id": 7,
+    "nombre": "US-02 Campos Faltantes - Sin sensorType",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_01", "value": 50 },
+    "descripcion": "Rechazo por ausencia de campo obligatorio sensorType. Espera 400 Bad Request."
+  },
+  {
+    "id": 8,
+    "nombre": "US-02 Campos Faltantes - Sin value",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_01", "sensorType": "humedad" },
+    "descripcion": "Rechazo por ausencia de campo obligatorio value. Espera 400 Bad Request."
+  },
+  {
+    "id": 9,
+    "nombre": "US-02 Validación - Payload vacío",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": {},
+    "descripcion": "Rechazo por payload vacío. Espera 400 Bad Request."
+  },
+  {
+    "id": 10,
+    "nombre": "US-02 Happy Path - Registro Flujo",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "flujo", "value": 12.5 },
+    "descripcion": "Registro válido de flujo de agua. Espera 201 Created."
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-03 Happy Path - Actualizar Umbrales",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/irrigation/thresholds",
+    "body": { "id_perfil": 1, "humedad_min_prc": 25, "humedad_max_prc": 75 },
+    "descripcion": "Actualización válida de umbrales. Espera 200 OK."
+  },
+  {
+    "id": 2,
+    "nombre": "US-03 Validación - Umbral Min > Max",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/irrigation/thresholds",
+    "body": { "id_perfil": 1, "humedad_min_prc": 80, "humedad_max_prc": 40 },
+    "descripcion": "Rechazo por datos inconsistentes (min >= max). Espera 400 Bad Request."
+  },
+  {
+    "id": 3,
+    "nombre": "US-03 Validación - Valores Negativos",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/irrigation/thresholds",
+    "body": { "id_perfil": 1, "humedad_min_prc": -10, "humedad_max_prc": 50 },
+    "descripcion": "Rechazo por valores fuera de rango (negativos). Espera 400 Bad Request."
+  },
+  {
+    "id": 4,
+    "nombre": "US-03 Validación - Perfil Inexistente",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/irrigation/thresholds",
+    "body": { "id_perfil": 999, "humedad_min_prc": 30, "humedad_max_prc": 70 },
+    "descripcion": "Error cuando el perfil no existe en la BD. Espera 404 Not Found."
+  },
+  {
+    "id": 5,
+    "nombre": "US-03 Happy Path - Obtener Eventos de Riego",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/irrigation/events",
+    "descripcion": "Recupera el historial de acciones de las válvulas. Espera 200 OK."
+  },
+  {
+    "id": 6,
+    "nombre": "US-03 Decisión - Apertura Automática (Simulación)",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "humedad", "value": 15 },
+    "descripcion": "Simula lectura baja para disparar apertura. Verificar log del controlador de válvulas."
+  },
+  {
+    "id": 7,
+    "nombre": "US-03 Decisión - Cierre Automático (Simulación)",
+    "metodo": "POST",
+    "url": "http://localhost:8000/api/v1/readings",
+    "body": { "nodeId": "NODO_VALPO_01", "sensorType": "humedad", "value": 90 },
+    "descripcion": "Simula lectura alta para disparar cierre. Verificar log del controlador de válvulas."
+  },
+  {
+    "id": 8,
+    "nombre": "US-03 Error - Campos Faltantes en Umbrales",
+    "metodo": "PUT",
+    "url": "http://localhost:8003/api/irrigation/thresholds",
+    "body": { "id_perfil": 1, "humedad_min_prc": 30 },
+    "descripcion": "Rechazo por falta de campo obligatorio (humedad_max_prc). Espera 400 Bad Request."
+  },
+  {
+    "id": 9,
+    "nombre": "US-03 Robustez - Error de Comunicación BD (Simulado)",
+    "metodo": "GET",
+    "url": "http://localhost:8001/api/irrigation/events",
+    "descripcion": "Verificar manejo de error 500 si la BD falla (requiere tirar la BD para probar real)."
+  },
+  {
+    "id": 10,
+    "nombre": "US-03 Happy Path - Accionamiento Manual",
+    "metodo": "POST",
+    "url": "http://localhost:8001/api/valvulas/1/accionar",
+    "body": { "accion": "ABRIR", "motivo": "Prueba DoD" },
+    "descripcion": "Accionamiento manual vía API con registro de auditoría. Espera 200 OK."
+  }
+]

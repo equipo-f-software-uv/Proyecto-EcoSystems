@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "nombre": "US-08 Happy Path - Analíticas Mayo 2026 (Hora)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-05-01&to=2026-05-31&granularity=hour",
+    "descripcion": "Consulta exitosa correlacionando humedad y riego por hora. Espera 200 OK."
+  },
+  {
+    "id": 2,
+    "nombre": "US-08 Happy Path - Analíticas Mayo 2026 (Día)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-05-01&to=2026-05-31&granularity=day",
+    "descripcion": "Consulta exitosa con agregación diaria. Espera 200 OK."
+  },
+  {
+    "id": 3,
+    "nombre": "US-08 Validación - Fecha inicio posterior a fin",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-06-01&to=2026-05-01",
+    "descripcion": "Rechazo por rango de fechas inconsistente. Espera 400 Bad Request."
+  },
+  {
+    "id": 4,
+    "nombre": "US-08 Validación - Formato de fecha corrupto",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=fecha-invalida&to=2026-05-31",
+    "descripcion": "Rechazo por formato de fecha no reconocido. Espera 400 Bad Request."
+  },
+  {
+    "id": 5,
+    "nombre": "US-08 Validación - Falta parámetro nodeId",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?from=2026-05-01&to=2026-05-31",
+    "descripcion": "Rechazo por ausencia de parámetro obligatorio. Espera 400 Bad Request."
+  },
+  {
+    "id": 6,
+    "nombre": "US-08 Validación - Granularidad inválida",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-05-01&to=2026-05-31&granularity=century",
+    "descripcion": "Rechazo por granularidad fuera del catálogo permitido. Espera 400 Bad Request."
+  },
+  {
+    "id": 7,
+    "nombre": "US-08 Período sin datos - Respuesta Limpia",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2020-01-01&to=2020-01-31",
+    "descripcion": "Respuesta 200 con arreglos vacíos para un periodo sin registros. Espera 200 OK."
+  },
+  {
+    "id": 8,
+    "nombre": "US-08 Robustez - Nodo Inexistente",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=FANTASMA&from=2026-05-01&to=2026-05-31",
+    "descripcion": "Respuesta 200 con arreglos vacíos al consultar un nodo que no tiene datos. Espera 200 OK."
+  },
+  {
+    "id": 9,
+    "nombre": "US-08 Performance - Rango Amplio (Mes Completo)",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-05-01&to=2026-05-31",
+    "descripcion": "Verificación de tiempo de respuesta para un mes de datos agregados (debe ser < 500ms)."
+  },
+  {
+    "id": 10,
+    "nombre": "US-08 Correlación - Verificar estructura JSON",
+    "metodo": "GET",
+    "url": "http://localhost:8002/api/v1/analytics?nodeId=NODO_VALPO_01&from=2026-05-01&to=2026-05-31",
+    "descripcion": "Valida que el JSON retorne las llaves 'humidity' e 'irrigationEvents'."
+  }
+]

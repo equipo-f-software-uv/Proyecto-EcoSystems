@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS valvula_control (
     nombre_valvula VARCHAR(100) NOT NULL,
     estado_actual VARCHAR(20) DEFAULT 'CERRADA',
     ubicacion_especifica VARCHAR(100),
+    modo_operacion VARCHAR(20) DEFAULT 'AUTOMATIC', -- 'AUTOMATIC' o 'MANUAL'
+    bloqueo_manual BOOLEAN DEFAULT FALSE, -- True congela las decisiones automáticas
     FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE SET NULL
 );
 
@@ -68,6 +70,40 @@ CREATE TABLE IF NOT EXISTS registro_valvula (
     fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_valvula) REFERENCES valvula_control(id_valvula) ON DELETE CASCADE
 );
+
+-- 6. Tabla de Monitoreo: Registro de Errores del Sistema (US-06)
+CREATE TABLE IF NOT EXISTS registro_error_sistema (
+    id_error SERIAL PRIMARY KEY,
+    tipo_error VARCHAR(50) NOT NULL, -- 'CODIGO', 'BASE_DATOS', 'HARDWARE', 'CONEXION'
+    mensaje_error TEXT NOT NULL,
+    detalle_tecnico TEXT,
+    nodo_id VARCHAR(50), -- Opcional, para fallos de hardware
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. Tabla de Analítica: Recomendaciones de Riego (US-09)
+CREATE TABLE IF NOT EXISTS recomendacion_riego (
+    id_recomendacion SERIAL PRIMARY KEY,
+    id_nodo VARCHAR(50) NOT NULL,
+    accion_recomendada VARCHAR(50) NOT NULL,
+    ajuste_agua_prc INT NOT NULL,
+    motivo TEXT NOT NULL,
+    fecha_generacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_nodo) REFERENCES nodo_sensor(id_nodo) ON DELETE CASCADE
+);
+
+-- 8. Tabla de Configuración Global del Sistema (Parada de Emergencia)
+CREATE TABLE IF NOT EXISTS configuracion_sistema (
+    id_config INT PRIMARY KEY DEFAULT 1,
+    estado_global VARCHAR(20) DEFAULT 'ACTIVE', -- 'ACTIVE' o 'SUSPENDED'
+    ultima_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (id_config = 1) -- Garantiza que sea un Singleton (solo una fila)
+);
+
+-- Insertar estado por defecto si no existe
+INSERT INTO configuracion_sistema (id_config, estado_global) 
+VALUES (1, 'ACTIVE') 
+ON CONFLICT (id_config) DO NOTHING;
 
 -- =================================================================
 -- Fin del script

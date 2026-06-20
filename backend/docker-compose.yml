@@ -32,7 +32,7 @@ services:
     command: sh -c "echo 'listener 1883\nallow_anonymous true' > /mosquitto/config/mosquitto.conf && mosquitto -c /mosquitto/config/mosquitto.conf"
 
   # --------------------------------------------------------
-  # 2. MICROSERVICIOS NODE.JS (APIs)
+  # 2. MICROSERVICIOS NODE.JS (APIs y Workers)
   # --------------------------------------------------------
   api_ingesta:
     build: ./node-api
@@ -80,13 +80,10 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
       - DB_HOST=db
 
-  # --------------------------------------------------------
-  # 3. MICROSERVICIOS PYTHON (Workers & Adapters)
-  # --------------------------------------------------------
   worker_historicos:
-    build: ./python-services
+    build: ./node-api
     container_name: ecosystems_worker
-    command: python workers/worker_historicos.py
+    command: npm run start:worker
     depends_on:
       - rabbitmq
       - db
@@ -95,15 +92,15 @@ services:
       - DB_HOST=db
 
   adaptador_mqtt:
-    build: ./python-services
+    build: ./node-api
     container_name: ecosystems_adaptador_mqtt
-    command: python adaptadores/adaptador_mqtt.py
+    command: npm run start:mqtt_adapter
     depends_on:
       - rabbitmq
       - mosquitto
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
-      - MQTT_BROKER=mosquitto
+      - MQTT_BROKER=mqtt://mosquitto
 
 volumes:
   pgdata:
