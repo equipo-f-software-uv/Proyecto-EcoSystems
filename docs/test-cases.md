@@ -24,8 +24,8 @@ Las pruebas aplican dos técnicas clásicas de diseño:
 | P04 | CE | Nombre de cultivo duplicado | `{"cropName": "Arándanos", "minHumidity": 35, "maxHumidity": 75}` (si ya existe) | 409 | **409 Conflict** (PROFILE_ALREADY_EXISTS) |
 | P05 | CE | Humedad mínima física negativa | `{"cropName": "Cerezas", "minHumidity": -15, "maxHumidity": 75}` | 400 | **400 Bad Request** (INVALID_RANGE) |
 | P06 | CE | Humedad mínima física > 100 | `{"cropName": "Cerezas", "minHumidity": 105, "maxHumidity": 75}` | 400 | **400 Bad Request** (INVALID_RANGE) |
-| P07 | CE | Humedad mínima no numérica | `{"cropName": "Cerezas", "minHumidity": "treinta", "maxHumidity": 75}` | 400 | **500 Internal Server Error** ❌ (Fallo de casteo en BD: invalid input syntax for type integer: "treinta") |
-| P08 | CE | Humedad mínima nula (null) | `{"cropName": "Cerezas", "minHumidity": null, "maxHumidity": 75}` | 400 | **500 Internal Server Error** ❌ (Fallo de constraint en BD: null value violates not-null constraint) |
+| P07 | CE | Humedad mínima no numérica | `{"cropName": "Cerezas", "minHumidity": "treinta", "maxHumidity": 75}` | 400 | **400 Bad Request** (INVALID_TYPE) |
+| P08 | CE | Humedad mínima nula (null) | `{"cropName": "Cerezas", "minHumidity": null, "maxHumidity": 75}` | 400 | **400 Bad Request** (MISSING_FIELDS) |
 | P09 | CE | Humedad mínima mayor a máxima | `{"cropName": "Cerezas", "minHumidity": 80, "maxHumidity": 50}` | 400 | **400 Bad Request** (MIN_GREATER_THAN_MAX) |
 
 ### Análisis de Valores Límite (VL)

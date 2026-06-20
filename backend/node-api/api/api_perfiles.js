@@ -29,8 +29,12 @@ app.post('/api/crop-profiles', async (req, res) => {
     const { cropName, minHumidity, maxHumidity } = req.body;
 
     // Escenario 2: Validación de datos incorrectos
-    if (!cropName || minHumidity === undefined || maxHumidity === undefined) {
+    if (!cropName || minHumidity === undefined || maxHumidity === undefined || minHumidity === null || maxHumidity === null) {
         return res.status(400).json({ error: "MISSING_FIELDS", message: "Todos los campos son obligatorios." });
+    }
+
+    if (!Number.isInteger(minHumidity) || !Number.isInteger(maxHumidity)) {
+        return res.status(400).json({ error: "INVALID_TYPE", message: "La humedad mínima y máxima deben ser números enteros." });
     }
 
     if (minHumidity < 0 || maxHumidity < 0 || minHumidity > 100 || maxHumidity > 100) {
