@@ -10,14 +10,30 @@ const EXCHANGE_NAME = "telemetry_exchange";
 const MQTT_BROKER = process.env.MQTT_BROKER || "mqtt://localhost";
 const MQTT_TOPIC = "ecosystems/telemetria/#";
 
+async function connectWithRetry() {
+    const maxRetries = 15;
+    const retryIntervalMs = 5000;
+    for (let i = 1; i <= maxRetries; i++) {
+        try {
+            const conn = await amqplib.connect(RABBITMQ_URL);
+            console.log("[*] Conexión a RabbitMQ establecida en Adaptador MQTT.");
+            return conn;
+        } catch (err) {
+            console.error(`[!] Error al conectar a RabbitMQ en MQTT (Intento ${i}/${maxRetries}): ${err.message}`);
+            if (i === maxRetries) throw err;
+            await new Promise(res => setTimeout(res, retryIntervalMs));
+        }
+    }
+}
+
 async function main() {
     console.log("Iniciando Adaptador MQTT -> RabbitMQ (Node.js)...");
 
     try {
-        // 1. Conectar a RabbitMQ
-        const rabbitConn = await amqplib.connect(RABBITMQ_URL);
+        // 1. Conectar a RabbitMQ con reintentos
+        const rabbitConn = await connectWithRetry();
         const rabbitChannel = await rabbitConn.createChannel();
-        await rabbitChannel.assertExchange(EXCHANGE_NAME, 'fanout', { durable: true });
+        await rabbitChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
 
         console.log("[*] Conectado a RabbitMQ. Exchange preparado.");
 
@@ -44,7 +60,9 @@ async function main() {
                 data["protocol"] = "MQTT";
                 
                 // Publicar en el exchange de RabbitMQ
-                rabbitChannel.publish(EXCHANGE_NAME, '', Buffer.from(JSON.stringify(data)));
+                const hasHumidity = data.metrics && data.metrics.humedad_suelo_prc !== undefined;
+                const routingKey = hasHumidity ? 'telemetry.humidity' : 'telemetry.other';
+                rabbitChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(data)));
                 
                 console.log(`[x] Puenteado a RabbitMQ: Nodo ${data.sensor_id} vía MQTT`);
             } catch (e) {

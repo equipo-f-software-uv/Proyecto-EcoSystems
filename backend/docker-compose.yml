@@ -29,7 +29,7 @@ services:
     container_name: ecosystems_mqtt
     ports:
       - "1883:1883"
-    command: sh -c "echo 'listener 1883\nallow_anonymous true' > /mosquitto/config/mosquitto.conf && mosquitto -c /mosquitto/config/mosquitto.conf"
+    command: sh -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && mosquitto -c /mosquitto/config/mosquitto.conf"
 
   # --------------------------------------------------------
   # 2. MICROSERVICIOS NODE.JS (APIs y Workers)
@@ -101,6 +101,27 @@ services:
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
       - MQTT_BROKER=mqtt://mosquitto
+
+  adaptador_lorawan:
+    build: ./node-api
+    container_name: ecosystems_adaptador_lorawan
+    command: npm run start:lorawan_adapter
+    ports:
+      - "8004:8004"
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - PORT=8004
+
+  swagger_docs:
+    build: ./node-api
+    container_name: ecosystems_swagger_docs
+    command: npm run start:swagger
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
 
 volumes:
   pgdata:

@@ -10,7 +10,9 @@
     "start:historicos": "node api/api_historicos.js",
     "start:perfiles": "node api/api_perfiles.js",
     "start:worker": "node worker_historicos.js",
-    "start:mqtt_adapter": "node adaptador_mqtt.js"
+    "start:mqtt_adapter": "node adaptador_mqtt.js",
+    "start:lorawan_adapter": "node adaptador_lorawan.js",
+    "start:swagger": "node swagger-server.js"
   },
   "keywords": [],
   "author": "",

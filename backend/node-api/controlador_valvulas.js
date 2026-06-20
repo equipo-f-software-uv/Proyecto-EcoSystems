@@ -26,8 +26,17 @@ const pool = new Pool(DB_CONFIG);
 
 let arduino;
 try {
-    arduino = new SerialPort({ path: SERIAL_PORT, baudRate: BAUD_RATE });
-    console.log(`[*] Conexión Serial con Arduino establecida en ${SERIAL_PORT}`);
+    arduino = new SerialPort({ path: SERIAL_PORT, baudRate: BAUD_RATE }, (err) => {
+        if (err) {
+            console.log(`[!] Aviso: Error abriendo puerto serial: ${err.message}`);
+        }
+    });
+    if (arduino) {
+        arduino.on('error', (err) => {
+            console.log(`[!] Error asíncrono en puerto serial: ${err.message}`);
+        });
+        console.log(`[*] Conexión Serial con Arduino establecida en ${SERIAL_PORT}`);
+    }
 } catch (e) {
     console.log(`[!] Aviso: Error abriendo puerto serial: ${e.message}`);
 }
@@ -35,6 +44,8 @@ try {
 const UMBRAL_MIN_DEFAULT = 30.0;
 const UMBRAL_MAX_DEFAULT = 80.0;
 const cache_umbrales = {};
+const cache_valvulas = {};
+let cached_estado_global = 'ACTIVE';
 const TIEMPO_CACHE_MS = 60000;
 
 // Helper para registro de errores centralizado (Mismo que US-06)
@@ -51,30 +62,81 @@ async function logSystemError(tipo, mensaje, detalle = null, nodoId = null) {
     }
 }
 
-// Función auxiliar para revisar estado global
-async function isSystemSuspended() {
+// Función auxiliar para revisar estado global (Usa la caché en memoria)
+function isSystemSuspended() {
+    return cached_estado_global === 'SUSPENDED';
+}
+
+async function inicializarCache() {
     try {
-        const { rows } = await pool.query("SELECT estado_global FROM configuracion_sistema WHERE id_config = 1");
-        return rows.length > 0 && rows[0].estado_global === 'SUSPENDED';
+        console.log("Inicializando caché en memoria...");
+        // 1. Cargar estado global
+        const resConfig = await pool.query("SELECT estado_global FROM configuracion_sistema WHERE id_config = 1");
+        if (resConfig.rows.length > 0) {
+            cached_estado_global = resConfig.rows[0].estado_global;
+        }
+
+        // 2. Cargar válvulas
+        const resValvulas = await pool.query("SELECT id_valvula, id_nodo, estado_actual, modo_operacion, bloqueo_manual FROM valvula_control");
+        for (const row of resValvulas.rows) {
+            if (row.id_nodo) {
+                cache_valvulas[row.id_nodo] = {
+                    id_valvula: row.id_valvula,
+                    estado_actual: row.estado_actual,
+                    modo_operacion: row.modo_operacion,
+                    bloqueo_manual: row.bloqueo_manual
+                };
+            }
+        }
+
+        // 3. Cargar umbrales
+        const resUmbrales = await pool.query(`
+            SELECT ns.id_nodo, pc.humedad_min_prc, pc.humedad_max_prc 
+            FROM nodo_sensor ns
+            JOIN perfil_cultivo pc ON ns.id_perfil = pc.id_perfil
+        `);
+        for (const row of resUmbrales.rows) {
+            cache_umbrales[row.id_nodo] = {
+                min: parseFloat(row.humedad_min_prc),
+                max: parseFloat(row.humedad_max_prc),
+                timestamp: Date.now()
+            };
+        }
+        console.log(`[*] Caché inicializada con éxito. Válvulas: ${Object.keys(cache_valvulas).length}, Umbrales: ${Object.keys(cache_umbrales).length}.`);
     } catch (e) {
-        console.error("Error verificando estado de emergencia:", e.message);
-        return false; // Fail-safe (podría ser true dependiendo del enfoque, false evita bloqueos fantasma)
+        console.error("Error inicializando caché:", e.message);
+    }
+}
+
+async function connectWithRetry() {
+    const maxRetries = 15;
+    const retryIntervalMs = 5000;
+    for (let i = 1; i <= maxRetries; i++) {
+        try {
+            const conn = await amqplib.connect(RABBITMQ_URL);
+            console.log("[*] Conexión a RabbitMQ establecida en Válvulas.");
+            return conn;
+        } catch (err) {
+            console.error(`[!] Error al conectar a RabbitMQ en Válvulas (Intento ${i}/${maxRetries}): ${err.message}`);
+            if (i === maxRetries) throw err;
+            await new Promise(res => setTimeout(res, retryIntervalMs));
+        }
     }
 }
 
 async function iniciarConsumidor() {
     try {
-        const conn = await amqplib.connect(RABBITMQ_URL);
+        const conn = await connectWithRetry();
         const channel = await conn.createChannel();
         
-        // Configurar Exchange y Queue propia para este servicio
-        await channel.assertExchange(EXCHANGE_NAME, 'fanout', { durable: true });
+        // Configurar Exchange y Queue propia para este servicio como Topic
+        await channel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
         await channel.assertQueue(QUEUE_NAME, { durable: true });
-        await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, '');
+        await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, 'telemetry.humidity');
 
-        await channel.prefetch(10);
+        await channel.prefetch(100);
         
-        console.log("[*] Escuchando eventos para control de riego en tiempo real...");
+        console.log("[*] Escuchando eventos para control de riego en tiempo real (Optimizado)...");
 
         channel.consume(QUEUE_NAME, async (msg) => {
             if (msg !== null) {
@@ -83,11 +145,11 @@ async function iniciarConsumidor() {
                 const { sensor_id, metrics } = payload;
                 const humedad = metrics?.humedad_suelo_prc;
                 
-                let umbral_min = UMBRAL_MIN_DEFAULT;
-                let umbral_max = UMBRAL_MAX_DEFAULT;
+                if (humedad !== undefined && sensor_id) {
+                    let umbral_min = UMBRAL_MIN_DEFAULT;
+                    let umbral_max = UMBRAL_MAX_DEFAULT;
 
-                // Evaluar caché / DB para obtener umbrales del cultivo actual
-                if (sensor_id) {
+                    // 1. Obtener umbrales de la caché (con TTL de 60s y fallback DB)
                     if (cache_umbrales[sensor_id] && (Date.now() - cache_umbrales[sensor_id].timestamp < TIEMPO_CACHE_MS)) {
                         umbral_min = cache_umbrales[sensor_id].min;
                         umbral_max = cache_umbrales[sensor_id].max;
@@ -109,22 +171,36 @@ async function iniciarConsumidor() {
                             console.error("Error consultando umbrales:", err.message);
                         }
                     }
-                }
 
-                if (humedad !== undefined) {
-                    // Consultar estado actual de la válvula asociada al nodo
-                    const resValvula = await pool.query(`
-                        SELECT id_valvula, estado_actual, bloqueo_manual FROM valvula_control WHERE id_nodo = $1
-                    `, [sensor_id]);
+                    // 2. Obtener válvula asociada desde caché (con fallback DB)
+                    let valvula = cache_valvulas[sensor_id];
+                    if (!valvula) {
+                        try {
+                            const resValvula = await pool.query(`
+                                SELECT id_valvula, estado_actual, modo_operacion, bloqueo_manual FROM valvula_control WHERE id_nodo = $1
+                            `, [sensor_id]);
+                            if (resValvula.rows.length > 0) {
+                                cache_valvulas[sensor_id] = {
+                                    id_valvula: resValvula.rows[0].id_valvula,
+                                    estado_actual: resValvula.rows[0].estado_actual,
+                                    modo_operacion: resValvula.rows[0].modo_operacion,
+                                    bloqueo_manual: resValvula.rows[0].bloqueo_manual
+                                };
+                                valvula = cache_valvulas[sensor_id];
+                            }
+                        } catch (err) {
+                            console.error("Error consultando válvula:", err.message);
+                        }
+                    }
 
-                    if (resValvula.rows.length > 0) {
-                        const { id_valvula, estado_actual, bloqueo_manual } = resValvula.rows[0];
+                    if (valvula) {
+                        const { id_valvula, estado_actual, bloqueo_manual } = valvula;
 
                         // Respetar el bloqueo manual (Override)
                         if (bloqueo_manual) {
                             console.log(`[INFO] Nodo ${sensor_id}: Motor automático ignorado (bloqueo manual activo en válvula ${id_valvula}).`);
                         } else {
-                            const systemSuspended = await isSystemSuspended();
+                            const systemSuspended = isSystemSuspended();
 
                             // Escenario 1: Activación del riego (Humedad baja)
                             if (humedad < umbral_min && estado_actual !== 'ABIERTA') {
@@ -172,6 +248,12 @@ async function accionarVálvula(id_valvula, accion, motivo, tiempo_inicio = Date
             UPDATE valvula_control SET estado_actual = $1 WHERE id_valvula = $2
         `, [estado_nuevo, id_valvula]);
 
+        // Actualizar caché local
+        const sensor_id = Object.keys(cache_valvulas).find(key => cache_valvulas[key].id_valvula === id_valvula);
+        if (sensor_id) {
+            cache_valvulas[sensor_id].estado_actual = estado_nuevo;
+        }
+
         // 3. Registrar auditoría (Se cumple requerimiento de log obligatorio)
         const latencia_ms = Date.now() - tiempo_inicio;
         await pool.query(`
@@ -216,6 +298,7 @@ app.post('/api/v1/system/emergency-stop/activate', async (req, res) => {
             SET estado_global = 'SUSPENDED', ultima_actualizacion = CURRENT_TIMESTAMP 
             WHERE id_config = 1
         `);
+        cached_estado_global = 'SUSPENDED';
 
         // Forzar cierre de todas las válvulas abiertas
         const openValves = await client.query("SELECT id_valvula FROM valvula_control WHERE estado_actual = 'ABIERTA'");
@@ -268,6 +351,7 @@ app.post('/api/v1/system/emergency-stop/deactivate', async (req, res) => {
             SET estado_global = 'ACTIVE', ultima_actualizacion = CURRENT_TIMESTAMP 
             WHERE id_config = 1
         `);
+        cached_estado_global = 'ACTIVE';
 
         await client.query(`
             INSERT INTO registro_error_sistema (tipo_error, mensaje_error, detalle_tecnico) 
@@ -356,6 +440,12 @@ app.post('/api/v1/valves/:id/override', async (req, res) => {
             WHERE id_valvula = $1
         `, [id_valvula]);
 
+        const sensor_id = Object.keys(cache_valvulas).find(key => cache_valvulas[key].id_valvula === id_valvula);
+        if (sensor_id) {
+            cache_valvulas[sensor_id].modo_operacion = 'MANUAL';
+            cache_valvulas[sensor_id].bloqueo_manual = true;
+        }
+
         // 2. Intentar ejecutar la acción física y registrar auditoría
         const motivo = `MANUAL: Operador ${operatorId}`;
         const tiempo_inicio = Date.now();
@@ -395,6 +485,13 @@ app.post('/api/v1/valves/:id/auto', async (req, res) => {
         `, [id_valvula]);
         
         if (rowCount === 0) return res.status(404).json({ error: "Válvula no encontrada." });
+
+        const sensor_id = Object.keys(cache_valvulas).find(key => cache_valvulas[key].id_valvula === id_valvula);
+        if (sensor_id) {
+            cache_valvulas[sensor_id].modo_operacion = 'AUTOMATIC';
+            cache_valvulas[sensor_id].bloqueo_manual = false;
+        }
+
         res.status(200).json({ status: "success", message: "Válvula devuelta a control automático." });
     } catch (e) {
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
@@ -508,6 +605,7 @@ app.post('/api/valvulas/:id_valvula/accionar', async (req, res) => {
 });
 
 app.listen(PORT, async () => {
+    await inicializarCache();
     await iniciarConsumidor();
     console.log(`API Válvulas corriendo en puerto ${PORT}`);
 });

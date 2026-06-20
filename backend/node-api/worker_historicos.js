@@ -18,22 +18,98 @@ const DB_CONFIG = {
 
 const pool = new Pool(DB_CONFIG);
 
-async function main() {
-    console.log("Iniciando Worker de Históricos (Node.js)...");
+let batch = [];
+const BATCH_SIZE_LIMIT = 500;
+const FLUSH_INTERVAL_MS = 100;
+let flushTimer = null;
+let channelRef = null;
+
+async function flushBatch() {
+    if (batch.length === 0) return;
+
+    const currentBatch = [...batch];
+    batch = [];
+
+    if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+    }
+
+    const values = [];
+    const valuePlaceholders = [];
+    let counter = 1;
+
+    for (const item of currentBatch) {
+        valuePlaceholders.push(`($${counter}, $${counter+1}, $${counter+2}, $${counter+3}, $${counter+4}, $${counter+5})`);
+        values.push(
+            item.sensor_id,
+            item.protocol,
+            item.humedad_suelo_prc,
+            item.temperatura_c,
+            item.flujo_agua_lpm,
+            item.timestamp
+        );
+        counter += 6;
+    }
+
+    const query = `
+        INSERT INTO medicion_historica 
+        (id_nodo, protocolo, humedad_suelo_prc, temperatura_c, flujo_agua_lpm, fecha_hora)
+        VALUES ${valuePlaceholders.join(', ')}
+    `;
 
     try {
-        // 1. Conectar a RabbitMQ
-        const conn = await amqplib.connect(RABBITMQ_URL);
-        const channel = await conn.createChannel();
+        await pool.query(query, values);
+        // Confirmar todos los mensajes en el lote
+        for (const item of currentBatch) {
+            channelRef.ack(item.originalMsg);
+        }
+        console.log(`[x] Lote guardado OK (${currentBatch.length} registros).`);
+    } catch (err) {
+        console.error("[!] Error guardando lote en BD:", err.message);
+        // Reencolar los mensajes para que no se pierdan
+        for (const item of currentBatch) {
+            channelRef.nack(item.originalMsg, false, true);
+        }
+    }
+}
 
-        // 2. Configurar Exchange y Queue
-        await channel.assertExchange(EXCHANGE_NAME, 'fanout', { durable: true });
+async function connectWithRetry() {
+    const maxRetries = 15;
+    const retryIntervalMs = 5000;
+    for (let i = 1; i <= maxRetries; i++) {
+        try {
+            const conn = await amqplib.connect(RABBITMQ_URL);
+            console.log("[*] Conexión a RabbitMQ establecida con éxito.");
+            return conn;
+        } catch (err) {
+            console.error(`[!] Error al conectar a RabbitMQ (Intento ${i}/${maxRetries}): ${err.message}`);
+            if (i === maxRetries) throw err;
+            await new Promise(res => setTimeout(res, retryIntervalMs));
+        }
+    }
+}
+
+async function main() {
+    console.log("Iniciando Worker de Históricos Optimizado (Node.js)...");
+
+    try {
+        // 1. Conectar a RabbitMQ con reintentos
+        const conn = await connectWithRetry();
+        const channel = await conn.createChannel();
+        channelRef = channel;
+
+        // 2. Configurar Exchange y Queue con topic binding
+        await channel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
         await channel.assertQueue(QUEUE_NAME, { durable: true });
-        await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, '');
+        await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, 'telemetry.#');
 
         console.log(`[*] Conectado a RabbitMQ. Escuchando en la cola '${QUEUE_NAME}'`);
 
-        // 3. Procesar mensajes
+        // Prefetch alto para permitir acumular lotes rápidamente
+        await channel.prefetch(1000);
+
+        // 3. Procesar mensajes con acumulación en lote
         channel.consume(QUEUE_NAME, async (msg) => {
             if (msg !== null) {
                 try {
@@ -41,29 +117,33 @@ async function main() {
                     
                     const sensor_id = payload.sensor_id;
                     const protocol = payload.protocol || 'Unknown';
-                    const timestamp = payload.timestamp;
+                    const timestamp = payload.timestamp || new Date().toISOString();
                     
-                    // Manejar métricas que pueden venir parciales desde el nuevo endpoint
+                    // Manejar métricas que pueden venir parciales o nulas
                     const { 
                         humedad_suelo_prc = 0, 
                         temperatura_c = 0, 
                         flujo_agua_lpm = 0 
-                    } = payload.metrics;
+                    } = payload.metrics || {};
 
-                    const query = `
-                        INSERT INTO medicion_historica 
-                        (id_nodo, protocolo, humedad_suelo_prc, temperatura_c, flujo_agua_lpm, fecha_hora)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                    `;
+                    batch.push({
+                        sensor_id,
+                        protocol,
+                        timestamp,
+                        humedad_suelo_prc,
+                        temperatura_c,
+                        flujo_agua_lpm,
+                        originalMsg: msg
+                    });
 
-                    await pool.query(query, [sensor_id, protocol, humedad_suelo_prc, temperatura_c, flujo_agua_lpm, timestamp]);
-                    
-                    console.log(`[x] Guardado OK: Nodo ${sensor_id} - Temp: ${temperatura_c}°C Hum: ${humedad_suelo_prc}%`);
-                    channel.ack(msg);
+                    if (batch.length >= BATCH_SIZE_LIMIT) {
+                        await flushBatch();
+                    } else if (!flushTimer) {
+                        flushTimer = setTimeout(flushBatch, FLUSH_INTERVAL_MS);
+                    }
                 } catch (err) {
-                    console.error("[!] Error procesando mensaje:", err.message);
-                    // Podríamos hacer un nack aquí si el error es temporal
-                    channel.nack(msg, false, false); 
+                    console.error("[!] Error decodificando o procesando mensaje individual:", err.message);
+                    channel.ack(msg); // Descartar mensajes corruptos
                 }
             }
         });

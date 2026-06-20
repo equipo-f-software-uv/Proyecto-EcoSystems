@@ -17,7 +17,7 @@ async function initRabbitMQ() {
         const conn = await amqplib.connect(RABBITMQ_URL);
         mqChannel = await conn.createChannel();
         // Usamos un exchange de tipo fanout para que todos los interesados reciban el mensaje
-        await mqChannel.assertExchange(EXCHANGE_NAME, 'fanout', { durable: true });
+        await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
         console.log("[*] Conectado a RabbitMQ en Ingesta. Exchange listo.");
     } catch (error) {
         console.error("Error en RabbitMQ:", error);
@@ -74,7 +74,8 @@ app.post('/api/v1/readings', async (req, res) => {
                 source: 'v1_endpoint'
             };
 
-            mqChannel.publish(EXCHANGE_NAME, '', Buffer.from(JSON.stringify(payload)));
+            const routingKey = sensorType === 'humedad' ? 'telemetry.humidity' : 'telemetry.other';
+            mqChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(payload)));
             
             console.log(`[AUDIT] Registro exitoso: Nodo ${nodeId}, Tipo ${sensorType}, Valor ${value}`);
             
@@ -104,7 +105,9 @@ app.post('/api/mediciones', async (req, res) => {
 
         if (mqChannel) {
             // Publicamos al exchange en lugar de directamente a una cola
-            mqChannel.publish(EXCHANGE_NAME, '', Buffer.from(JSON.stringify(payload)));
+            const hasHumidity = payload.metrics && payload.metrics.humedad_suelo_prc !== undefined;
+            const routingKey = hasHumidity ? 'telemetry.humidity' : 'telemetry.other';
+            mqChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(payload)));
             return res.json({ status: "success", message: "Datos publicados en el exchange correctamente" });
         } else {
             return res.status(503).json({ detail: "Servicio de colas no disponible" });
