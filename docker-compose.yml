@@ -31,5 +31,17 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ecosystems_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+
 volumes:
   pgdata:
+

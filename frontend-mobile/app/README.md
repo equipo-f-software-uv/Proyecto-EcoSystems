@@ -1,1 +1,0 @@
-Aquí irá todo lo relacionado al despligue de info en la app

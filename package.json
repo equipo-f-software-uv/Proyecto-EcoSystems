@@ -6,13 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:ingesta": "node api/api_ingesta.js",
-    "start:valvulas": "node controlador_valvulas.js",
+    "start:valvulas": "node api/controlador_valvulas.js",
     "start:historicos": "node api/api_historicos.js",
     "start:perfiles": "node api/api_perfiles.js",
-    "start:worker": "node worker_historicos.js",
-    "start:mqtt_adapter": "node adaptador_mqtt.js",
-    "start:lorawan_adapter": "node adaptador_lorawan.js",
-    "start:swagger": "node swagger-server.js"
+    "start:worker": "node api/worker_historicos.js",
+    "start:mqtt_adapter": "node api/adaptador_mqtt.js",
+    "start:lorawan_adapter": "node api/adaptador_lorawan.js",
+    "start:swagger": "node api/swagger-server.js"
   },
   "keywords": [],
   "author": "",
