@@ -116,7 +116,8 @@ Crea un archivo `.env` en la raíz de la aplicación con los siguientes parámet
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/ecosystems_db
 RABBITMQ_URL=amqp://localhost
-PORT_INGESTA=8000```
+PORT_INGESTA=8000
+```
 
 ---
 
