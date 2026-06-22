@@ -98,3 +98,10 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
      ```
 ---
 
+## Responsabilidades del equipo
+
+| Integrante | Rol(es) Oficial(es) | Ítems de la rúbrica a cargo | Responsabilidades Específicas |
+|------------|---------------------|-----------------------------|-------------------------------|
+| **Joaquín Molina** | Technical Lead / Arquitecto (Backend y Gestión de Datos) | Ítems 1.1, 1.2, 1.3, 3.1, 3.2, 3.3, 5.1 | Arquitectura del backend, pipeline de RabbitMQ/TimescaleDB, diagramas de diseño, instrucciones de despliegue y archivo `DeudaTecnica.md`. |
+| **Jorge Bahamondes** | Scrum Master / Quality Assurance | Ítems 2.1, 2.2, 2.3, 2.4, 4.1 | Gestión del backlog, diagramas de análisis (Casos de uso/Estados), matriz `CasosDePrueba.md` y archivo `EspecificacionHU.md`. |
+| **Bruno Díaz** | Developer (Interfaz y Frontend) | Ítems 1.1, 1.2, 1.3 | Construcción de componentes frontend, maquetación del dashboard interactivo y consumo integrado de las APIs en Next.js. |
