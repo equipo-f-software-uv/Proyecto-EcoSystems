@@ -45,7 +45,7 @@ El objetivo principal de este módulo es centralizar la información proveniente
 ## Tecnologías Utilizadas
 * **Framework API:** Express.js (Node.js) - Arquitectura asíncrona impulsada por eventos, ideal para operaciones I/O intensivas (IoT).
 * **Base de Datos:** PostgreSQL con TimescaleDB - Optimizado para alta ingesta y consultas de series de tiempo (IoT).
-* **Comunicación asíncrona:** RabbitMQ (a través de `amqplib`) para desacoplar la ingesta de la persistencia.
+* **Communication asíncrona:** RabbitMQ (a través de `amqplib`) para desacoplar la ingesta de la persistencia.
 
 ---
 
@@ -60,9 +60,9 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 
 ## Estructura del Directorio
 * `/adaptadores/`: Microservicios que traducen protocolos específicos (ej. MQTT, LoRaWAN) al formato interno del sistema.
-* `/api/`: Contiene las API REST públicas (ej. `api_ingesta.py` para recolección, `api_perfiles.py` para configuración).
+* `/api/`: Contiene las API REST públicas (ej. `api_ingesta.js` para recolección, `api_perfiles.js` para configuración).
 * `/workers/`: Procesos en segundo plano (consumidores de colas) encargados del procesamiento diferido.
-* `controlador_valvulas.py`: Microservicio crítico que evalúa reglas y se comunica con el hardware actuador.
+* `controlador_valvulas.js`: Microservicio crítico que evalúa reglas y se comunica con el hardware actuador.
 * `/database/`: Scripts de inicialización, definición de tablas relacionales y esquemas de la base de datos (ej. `01_schema.sql`).
 
 ---
@@ -78,7 +78,7 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
      npm install
      ```
 3. **Configuración de Credenciales**:
-   - Asegúrate de tener RabbitMQ corriendo y actualiza `RABBITMQ_URL` dentro de `api/api_ingesta.py`.
+   - Asegúrate de tener RabbitMQ corriendo y actualiza `RABBITMQ_URL` dentro de `api/api_ingesta.js`.
 4. **Ejecución de Microservicios (Terminales independientes)**:
    - **1. API Ingesta** (Puerto 8000): 
      ```bash
@@ -96,6 +96,7 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
      ```bash
      npm run start:perfiles
      ```
+
 ---
 
 ## Responsabilidades del equipo
