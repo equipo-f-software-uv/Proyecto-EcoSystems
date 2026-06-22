@@ -36,16 +36,21 @@ El objetivo principal de este módulo es centralizar la información proveniente
 | Artefacto                          | Ubicación / enlace          | Descripción |
 |------------------------------------|-----------------------------|-------------|
 | **Modelo de dominio** | `[./documentos/modelo_dominio.md](./documentos/modelo_dominio.md)` | Cubre las entidades, atributos y relaciones de la HU. |
+| **Diagrama de casos de uso** | `[./documentos/](./documentos/)` | Diagrama general que cubre la funcionalidad de los actores del proyecto. |
 | **Especificación de HU** | `[./documentos/US-02.md](./documentos/US-02.md)` y `[./documentos/US-09.md](./documentos/US-09.md)` | Incluye flujos, criterios de aceptación y especificaciones del sprint. |
-| **Diagrama de despliegue, comp. y secuencia** | `[./documentos/Arquitectura.md](./documentos/Arquitectura.md)` | Infraestructura física, distribución de nodos, componentes y flujos de secuencia. |
+| **Diagrama de estados** | `[./documentos/](./documentos/)` | Representación lúdica del ciclo de vida de los estados de la entidad. |
+| **Diagrama de despliegue y comp.** | `[./documentos/Arquitectura.md](./documentos/Arquitectura.md)` | Infraestructura física y distribución de nodos lógicos del backend. |
+| **Diagrama de componentes** | `[./documentos/Arquitectura.md](./documentos/Arquitectura.md)` | Estructura detallada que muestra dependencias e interfaces del sistema. |
+| **Diagrama de secuencia** | `[./documentos/Arquitectura.md](./documentos/Arquitectura.md)` | Flujos de llamadas y secuencia del procesamiento asíncrono implementado. |
 | **Casos de prueba** | `[./documentos/test-cases.md](./documentos/test-cases.md)` | Matriz con casos detallados, acciones y salidas esperadas. |
+| **Deuda técnica / code smells** | `[./documentos/](./documentos/)` | Identificación de oportunidades de refactorización y mejoras de diseño. |
 
 ---
 
 ## Tecnologías Utilizadas
 * **Framework API:** Express.js (Node.js) - Arquitectura asíncrona impulsada por eventos, ideal para operaciones I/O intensivas (IoT).
 * **Base de Datos:** PostgreSQL con TimescaleDB - Optimizado para alta ingesta y consultas de series de tiempo (IoT).
-* **Communication asíncrona:** RabbitMQ (a través de `amqplib`) para desacoplar la ingesta de la persistencia.
+* **Comunicación asíncrona:** RabbitMQ (a través de `amqplib`) para desacoplar la ingesta de la persistencia.
 
 ---
 
@@ -106,3 +111,9 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 | **Joaquín Molina** | Technical Lead / Arquitecto (Backend y Gestión de Datos) | Ítems 1.1, 1.2, 1.3, 3.1, 3.2, 3.3, 5.1 | Arquitectura del backend, pipeline de RabbitMQ/TimescaleDB, diagramas de diseño, instrucciones de despliegue y archivo `DeudaTecnica.md`. |
 | **Jorge Bahamondes** | Scrum Master / Quality Assurance | Ítems 2.1, 2.2, 2.3, 2.4, 4.1 | Gestión del backlog, diagramas de análisis (Casos de uso/Estados), matriz `CasosDePrueba.md` y archivo `EspecificacionHU.md`. |
 | **Bruno Díaz** | Developer (Interfaz y Frontend) | Ítems 1.1, 1.2, 1.3 | Construcción de componentes frontend, maquetación del dashboard interactivo y consumo integrado de las APIs en Next.js. |
+
+---
+
+## Bonus 
+- Contenedores: sí — docker-compose en ./docker-compose.yml
+- Spec-driven development: sí — especificaciones en ./especificación abierta/
