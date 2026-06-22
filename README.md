@@ -113,3 +113,13 @@ npm run start:ingesta     # Puerto 8000 (API Ingesta)
 npm run start:valvulas    # Puerto 8001 (Controlador de Válvulas)
 npm run start:historicos  # Puerto 8002 (API Históricos)
 npm run start:perfiles    # Puerto 8003 (Perfiles de Cultivo)
+
+---
+
+## 👥 Responsabilidades del Equipo (Rúbrica Individual)
+
+| Integrante | Rol(es) en la Entrega | Ítems de la Rúbrica a Cargo | Responsabilidades Específicas |
+|------------|-----------------------|-----------------------------|-------------------------------|
+| **Joaquín Molina** | Technical Lead (Backend y Gestión de Datos) | Dimensión 1, 3 y 5 | Desarrollo de API REST, base de datos (TimescaleDB), RabbitMQ, diagramas de diseño y DeudaTecnica.md. |
+| **Jorge Bahamondes** | Scrum Master / Quality Assurance | Dimensión 2 y 4 | Gestión del backlog de historias de usuario, diagramas de análisis, especificación de HU y CasosDePrueba.md. |
+| **Bruno Díaz** | Developer (Interfaz y Frontend) | Dimensión 1 | Desarrollo de la aplicación web en Next.js/TypeScript, interfaz de usuario y consumo de datos históricos. |
