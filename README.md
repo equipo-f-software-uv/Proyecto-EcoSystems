@@ -90,8 +90,28 @@ EcoSystems es una solución de software y hardware orientada a la monitorizació
 * Instancia de RabbitMQ Broker activa y accesible.
 
 ### Variables de entorno
-Crea un archivo `.env` en el raíz del backend con los siguientes parámetros:
+Crea un archivo `.env` en la raíz del backend con los siguientes parámetros:
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/ecosystems_db
 RABBITMQ_URL=amqp://localhost
 PORT_INGESTA=8000
+
+# 1. Configurar la base de datos ejecutando el script en PostgreSQL
+# Archivo de origen: /base de datos/01_schema.sql
+
+# 2. Instalar dependencias en el proyecto raíz
+npm install
+
+# 3. Levantar los microservicios en terminales independientes de forma simultánea
+npm run start:ingesta     # Puerto 8000
+npm run start:valvulas    # Puerto 8001
+npm run start:historicos  # Puerto 8002
+npm run start:perfiles    # Puerto 8003
+
+## Responsabilidades del equipo
+
+| Integrante | Rol(es) Oficial(es) | Ítems de la rúbrica a cargo | Responsabilidades Específicas |
+|------------|---------------------|-----------------------------|-------------------------------|
+| **Joaquín Molina** | Technical Lead / Arquitecto (Backend y Gestión de Datos) | Ítems 1.1, 1.2, 1.3, 3.1, 3.2, 3.3, 5.1 | Arquitectura del backend, pipeline de RabbitMQ/TimescaleDB, diagramas de diseño, instrucciones de despliegue y archivo `DeudaTecnica.md`. |
+| **Jorge Bahamondes** | Scrum Master / Quality Assurance | Ítems 2.1, 2.2, 2.3, 2.4, 4.1 | Gestión del backlog, diagramas de análisis (Casos de uso/Estados), matriz `CasosDePrueba.md` y archivo `EspecificacionHU.md`. |
+| **Bruno Díaz** | Developer (Interfaz y Frontend) | Ítems 1.1, 1.2, 1.3 | Construcción de componentes frontend, maquetación del dashboard interactivo y consumo integrado de las APIs en Next.js. |
