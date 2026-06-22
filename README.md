@@ -14,8 +14,6 @@ El objetivo principal de este módulo es centralizar la información proveniente
 | US-02 | Almacenamiento histórico de lecturas de sensores en la Base de Datos | #2    |
 | US-09 | Panel de gráficos históricos e interactivos de humedad y riego      | #9    |
 
-> **Nota de Alcance:** El flujo implementado cubre de extremo a extremo (Frontend, Backend y Persistencia) una transacción compleja de ingesta masiva asíncrona mediante colas RabbitMQ hacia tablas optimizadas en TimescaleDB (US-02), junto con la búsqueda y filtrado de datos históricos de los últimos 7 días renderizados en la interfaz (US-09).
-
 ---
 
 ## Historias de Usuario en Backlog (Seguimiento del Proyecto)
