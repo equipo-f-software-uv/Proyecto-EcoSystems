@@ -104,6 +104,22 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 
 ---
 
+## 🚀 Instrucciones de instalación y ejecución
+
+### Requisitos previos
+* **Entorno:** Node.js v18 o superior.
+* **Mensajería:** Instancia activa de RabbitMQ Broker local o remota.
+* **Persistencia:** Instancia activa de PostgreSQL con extensión TimescaleDB habilitada.
+
+### Variables de entorno
+Crea un archivo `.env` en la raíz de la aplicación con los siguientes parámetros obligatorios:
+```env
+DATABASE_URL=postgres://user:password@localhost:5432/ecosystems_db
+RABBITMQ_URL=amqp://localhost
+PORT_INGESTA=8000
+
+---
+
 ## Responsabilidades del equipo
 
 | Integrante | Rol(es) Oficial(es) | Ítems de la rúbrica a cargo | Responsabilidades Específicas |
