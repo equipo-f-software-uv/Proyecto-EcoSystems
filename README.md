@@ -66,3 +66,35 @@ Conforme a las recientes evaluaciones de escalabilidad, el backend contempla las
 * `/database/`: Scripts de inicialización, definición de tablas relacionales y esquemas de la base de datos (ej. `01_schema.sql`).
 
 ---
+
+## 🚀 Configuración y Despliegue Rápido
+
+1. **Base de Datos**:
+   - Ejecuta el script `database/01_schema.sql` en tu gestor **PostgreSQL** para generar las tablas requeridas (`nodo_sensor`, `perfil_cultivo`, `medicion_historica`, `registro_valvula`).
+2. **Entorno Node.js**:
+   - Asegúrate de tener Node.js instalado (v18+).
+   - Instalar dependencias para microservicios y adaptadores: 
+     ```bash
+     npm install
+     ```
+3. **Configuración de Credenciales**:
+   - Asegúrate de tener RabbitMQ corriendo y actualiza `RABBITMQ_URL` dentro de `api/api_ingesta.py`.
+4. **Ejecución de Microservicios (Terminales independientes)**:
+   - **1. API Ingesta** (Puerto 8000): 
+     ```bash
+     npm run start:ingesta
+     ```
+   - **2. API Controlador de Válvulas** (Puerto 8001): 
+     ```bash
+     npm run start:valvulas
+     ```
+   - **3. API Históricos/Frontend** (Puerto 8002):
+     ```bash
+     npm run start:historicos
+     ```
+   - **4. API Perfiles de Cultivo** (Puerto 8003):
+     ```bash
+     npm run start:perfiles
+     ```
+---
+
