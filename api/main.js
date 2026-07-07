@@ -3,22 +3,30 @@ const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
-// Middleware para parsear el body como JSON
 app.use(express.json());
-// Habilitar CORS para permitir peticiones desde el Frontend (React)
-app.use(cors());
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 const PORT = process.env.PORT || 8000;
+
+if (!process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD environment variable is required');
+    process.exit(1);
+}
 
 // =================================================================
 // 1. CONFIGURACIÓN DE BASE DE DATOS (Pool de conexiones)
 // =================================================================
-// Usamos un pool para manejar mejor las peticiones concurrentes (Requisito US-10)
 const pool = new Pool({
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'ecosystems_db',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
@@ -70,7 +78,7 @@ app.post('/api/mediciones', async (req, res) => {
         return res.json({ status: "success", message: "Datos guardados correctamente" });
     } catch (error) {
         console.error("Error BD:", error);
-        return res.status(500).json({ detail: `Error al insertar en BD: ${error.message}` });
+        return res.status(500).json({ detail: "Error al insertar en BD" });
     }
 });
 
@@ -94,7 +102,7 @@ app.get('/api/estadisticas', async (req, res) => {
         res.json({ status: "success", data: rows });
     } catch (error) {
         console.error("Error BD Estadísticas:", error);
-        res.status(500).json({ detail: `Error al consultar históricos: ${error.message}` });
+        res.status(500).json({ detail: "Error al consultar históricos" });
     }
 });
 

@@ -4,7 +4,13 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 const PORT = process.env.PORT || 8004;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
@@ -133,7 +139,7 @@ app.post('/api/v1/lorawan/webhook', async (req, res) => {
 
     } catch (e) {
         console.error("[LoRaWAN Webhook] Error interno:", e.message);
-        return res.status(500).json({ error: `Error interno: ${e.message}` });
+        return res.status(500).json({ error: "Error interno del servidor" });
     }
 });
 

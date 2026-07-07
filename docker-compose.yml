@@ -30,6 +30,8 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - NODE_ENV=production
 
   frontend:
     build:
