@@ -62,7 +62,10 @@ async function main() {
                 // Publicar en el exchange de RabbitMQ
                 const hasHumidity = data.metrics && data.metrics.humedad_suelo_prc !== undefined;
                 const routingKey = hasHumidity ? 'telemetry.humidity' : 'telemetry.other';
-                rabbitChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(data)));
+                const published = rabbitChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(data)));
+                if (!published) {
+                    console.error(`[!] Buffer de escritura RabbitMQ lleno. Mensaje del nodo ${data.sensor_id} podría perderse.`);
+                }
                 
                 console.log(`[x] Puenteado a RabbitMQ: Nodo ${data.sensor_id} vía MQTT`);
             } catch (e) {
@@ -75,7 +78,7 @@ async function main() {
         });
 
     } catch (error) {
-        console.error("Error fatal en el Adaptador MQTT:", error);
+        console.error("[FATAL] Error fatal en el Adaptador MQTT:", error.message, error.stack);
         process.exit(1);
     }
 }

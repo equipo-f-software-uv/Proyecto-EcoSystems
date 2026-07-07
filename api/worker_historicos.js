@@ -68,7 +68,7 @@ async function flushBatch() {
         }
         console.log(`[x] Lote guardado OK (${currentBatch.length} registros).`);
     } catch (err) {
-        console.error("[!] Error guardando lote en BD:", err.message);
+        console.error(`[!] Error guardando lote en BD (${currentBatch.length} registros): ${err.message}`, err.stack);
         // Reencolar los mensajes para que no se pierdan
         for (const item of currentBatch) {
             channelRef.nack(item.originalMsg, false, true);
@@ -144,8 +144,8 @@ async function main() {
                         flushTimer = setTimeout(flushBatch, FLUSH_INTERVAL_MS);
                     }
                 } catch (err) {
-                    console.error("[!] Error decodificando o procesando mensaje individual:", err.message);
-                    channel.ack(msg); // Descartar mensajes corruptos
+                    console.error(`[!] Error decodificando o procesando mensaje individual: ${err.message}. Contenido: ${msg.content.toString().substring(0, 200)}`);
+                    channel.ack(msg);
                 }
             }
         });

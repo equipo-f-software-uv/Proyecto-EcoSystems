@@ -54,6 +54,7 @@ async function monitorearConectividad() {
         }
     } catch (e) {
         console.error("Error en monitoreo de conectividad:", e.message);
+        await logSystemError('CODIGO', 'Error en monitoreo de conectividad de nodos', e.stack);
     }
 }
 // Ejecutar monitoreo cada 5 minutos
@@ -340,7 +341,10 @@ app.get('/api/v1/recommendations', async (req, res) => {
             INSERT INTO recomendacion_riego (id_nodo, accion_recomendada, ajuste_agua_prc, motivo)
             VALUES ($1, $2, $3, $4)
         `, [sectorId, responsePayload.recommendation, responsePayload.waterAdjustmentPercent, responsePayload.reason])
-        .catch(err => console.error("Error persistiendo recomendación de forma asíncrona:", err.message));
+        .catch(async (err) => {
+            console.error("Error persistiendo recomendación de forma asíncrona:", err.message);
+            await logSystemError('BASE_DATOS', 'Error al persistir recomendación de riego', err.stack, sectorId);
+        });
 
     } catch (e) {
         await logSystemError('CODIGO', 'Error en generación de recomendaciones', e.stack, sectorId);

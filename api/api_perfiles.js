@@ -18,11 +18,25 @@ const DB_CONFIG = {
 };
 const pool = new Pool(DB_CONFIG);
 
+async function logSystemError(tipo, mensaje, detalle = null, nodoId = null) {
+    try {
+        const query = `
+            INSERT INTO registro_error_sistema (tipo_error, mensaje_error, detalle_tecnico, nodo_id)
+            VALUES ($1, $2, $3, $4)
+        `;
+        await pool.query(query, [tipo, mensaje, detalle, nodoId]);
+        console.log(`[LOG-ERROR] ${tipo}: ${mensaje}`);
+    } catch (e) {
+        console.error("Error crítico: No se pudo guardar el log en la BD:", e.message);
+    }
+}
+
 app.get('/api/perfiles', async (req, res) => {
     try {
         const { rows } = await pool.query("SELECT * FROM perfil_cultivo ORDER BY id_perfil ASC");
         res.json(rows);
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al listar perfiles de cultivo', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -79,6 +93,7 @@ app.post('/api/crop-profiles', async (req, res) => {
             maxHumidity 
         });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al crear perfil de cultivo', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -117,6 +132,7 @@ app.put('/api/sectors/:sectorId/profile', async (req, res) => {
             message: `Perfil ${profileId} asignado al sector ${sectorId} exitosamente.` 
         });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al asignar perfil a sector', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -154,6 +170,7 @@ app.put('/api/irrigation/thresholds', async (req, res) => {
         
         res.json({ status: "success", data: rows[0] });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al actualizar umbrales de riego', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -168,6 +185,7 @@ app.delete('/api/perfiles/:id_perfil', async (req, res) => {
         
         res.json({ status: "success", message: `Perfil ${id_perfil} eliminado` });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al eliminar perfil de cultivo', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
