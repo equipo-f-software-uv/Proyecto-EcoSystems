@@ -4,7 +4,13 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 const PORT = process.env.PORT || 8000;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
@@ -91,7 +97,7 @@ app.post('/api/v1/readings', async (req, res) => {
         }
     } catch (e) {
         console.error(`[AUDIT] Error interno al procesar lectura: ${e.message}`);
-        return res.status(500).json({ error: `Error interno: ${e.message}` });
+        return res.status(500).json({ error: "Error interno del servidor" });
     }
 });
 
@@ -113,7 +119,7 @@ app.post('/api/mediciones', async (req, res) => {
             return res.status(503).json({ detail: "Servicio de colas no disponible" });
         }
     } catch (e) {
-        return res.status(500).json({ detail: `Error al publicar mensaje: ${e.message}` });
+        return res.status(500).json({ detail: "Error al publicar mensaje" });
     }
 });
 

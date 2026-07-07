@@ -10,9 +10,14 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 const EXCHANGE_NAME = "telemetry_exchange";
 const QUEUE_NAME = "historicos_queue";
 
+if (!process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD environment variable is required');
+    process.exit(1);
+}
+
 const DB_CONFIG = {
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'ecosystems_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432')

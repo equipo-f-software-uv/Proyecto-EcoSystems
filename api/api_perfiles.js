@@ -4,14 +4,26 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 const PORT = process.env.PORT || 8003;
+
+if (!process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD environment variable is required');
+    process.exit(1);
+}
+
 const DB_CONFIG = {
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'ecosystems_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432')
@@ -23,7 +35,8 @@ app.get('/api/perfiles', async (req, res) => {
         const { rows } = await pool.query("SELECT * FROM perfil_cultivo ORDER BY id_perfil ASC");
         res.json(rows);
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error fetching profiles:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -79,7 +92,8 @@ app.post('/api/crop-profiles', async (req, res) => {
             maxHumidity 
         });
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error creating crop profile:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -117,7 +131,8 @@ app.put('/api/sectors/:sectorId/profile', async (req, res) => {
             message: `Perfil ${profileId} asignado al sector ${sectorId} exitosamente.` 
         });
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error assigning profile to sector:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -154,7 +169,8 @@ app.put('/api/irrigation/thresholds', async (req, res) => {
         
         res.json({ status: "success", data: rows[0] });
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error updating thresholds:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -168,7 +184,8 @@ app.delete('/api/perfiles/:id_perfil', async (req, res) => {
         
         res.json({ status: "success", message: `Perfil ${id_perfil} eliminado` });
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error deleting profile:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 

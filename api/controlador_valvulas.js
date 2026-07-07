@@ -6,25 +6,45 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST', 'PUT'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Operator-Token'],
+}));
 
 const PORT = process.env.PORT || 8001;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 const EXCHANGE_NAME = "telemetry_exchange";
 const QUEUE_NAME = "valvulas_queue";
-const SERIAL_PORT = process.env.SERIAL_PORT || "COM3"; // Ajustar al puerto donde conectes el Arduino
+const SERIAL_PORT = process.env.SERIAL_PORT || "COM3";
 const BAUD_RATE = 115200;
+
+if (!process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD environment variable is required');
+    process.exit(1);
+}
 
 const DB_CONFIG = {
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'ecosystems_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432')
 };
 const pool = new Pool(DB_CONFIG);
+
+// Authentication middleware for critical endpoints
+function requireOperatorAuth(req, res, next) {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(401).json({ error: "UNAUTHORIZED", message: "Se requiere autenticación para esta operación." });
+    }
+    next();
+}
 
 let arduino;
 try {
@@ -274,7 +294,7 @@ async function accionarVálvula(id_valvula, accion, motivo, tiempo_inicio = Date
  * Escenario 1: Activación explícita de la parada global
  * Endpoint: POST /api/v1/system/emergency-stop/activate
  */
-app.post('/api/v1/system/emergency-stop/activate', async (req, res) => {
+app.post('/api/v1/system/emergency-stop/activate', requireOperatorAuth, async (req, res) => {
     const { reason, operatorId } = req.body;
 
     if (!reason || !operatorId) {
@@ -319,7 +339,7 @@ app.post('/api/v1/system/emergency-stop/activate', async (req, res) => {
     } catch (e) {
         await client.query('ROLLBACK');
         await logSystemError('BASE_DATOS', 'Fallo al activar emergencia', e.stack);
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" });
     } finally {
         client.release();
     }
@@ -329,7 +349,7 @@ app.post('/api/v1/system/emergency-stop/activate', async (req, res) => {
  * Escenario 4: Desactivación segura de la alerta
  * Endpoint: POST /api/v1/system/emergency-stop/deactivate
  */
-app.post('/api/v1/system/emergency-stop/deactivate', async (req, res) => {
+app.post('/api/v1/system/emergency-stop/deactivate', requireOperatorAuth, async (req, res) => {
     const { operatorId } = req.body;
 
     if (!operatorId) {
@@ -365,7 +385,7 @@ app.post('/api/v1/system/emergency-stop/deactivate', async (req, res) => {
     } catch (e) {
         await client.query('ROLLBACK');
         await logSystemError('BASE_DATOS', 'Fallo al desactivar emergencia', e.stack);
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" });
     } finally {
         client.release();
     }
@@ -395,7 +415,8 @@ app.get('/api/v1/valves/:id/status', async (req, res) => {
             overrideActive: valve.bloqueo_manual
         });
     } catch (e) {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        console.error('Error getting valve status:', e.message);
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" });
     }
 });
 
@@ -403,7 +424,7 @@ app.get('/api/v1/valves/:id/status', async (req, res) => {
  * Escenario 2: Ejecución de comando de control manual (Override con Prioridad)
  * Endpoint: POST /api/v1/valves/:id/override
  */
-app.post('/api/v1/valves/:id/override', async (req, res) => {
+app.post('/api/v1/valves/:id/override', requireOperatorAuth, async (req, res) => {
     const id_valvula = parseInt(req.params.id);
     const { action, operatorId, simulateTimeout } = req.body;
 
@@ -467,7 +488,7 @@ app.post('/api/v1/valves/:id/override', async (req, res) => {
 
     } catch (e) {
         await client.query('ROLLBACK');
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" });
     } finally {
         client.release();
     }
@@ -496,7 +517,7 @@ app.post('/api/v1/valves/:id/auto', async (req, res) => {
 
         res.status(200).json({ status: "success", message: "Válvula devuelta a control automático." });
     } catch (e) {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" });
     }
 });
 
@@ -537,7 +558,8 @@ app.post('/api/v1/valve-logs', async (req, res) => {
             data: rows[0]
         });
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error creating valve log:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -569,7 +591,8 @@ app.get('/api/v1/valve-logs', async (req, res) => {
 
         res.status(200).json(rows);
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error fetching valve logs:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -589,7 +612,8 @@ app.get('/api/irrigation/events', async (req, res) => {
         const { rows } = await pool.query(query);
         res.json(rows);
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error fetching irrigation events:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -602,7 +626,8 @@ app.post('/api/valvulas/:id_valvula/accionar', async (req, res) => {
         const result = await accionarVálvula(id_valvula, accion, motivo);
         res.json(result);
     } catch (e) {
-        res.status(500).json({ detail: e.message });
+        console.error('Error legacy valve action:', e.message);
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 

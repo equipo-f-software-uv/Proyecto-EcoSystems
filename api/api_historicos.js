@@ -4,14 +4,26 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Role'],
+}));
+
 const PORT = process.env.PORT || 8002;
+
+if (!process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD environment variable is required');
+    process.exit(1);
+}
+
 const DB_CONFIG = {
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'ecosystems_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432')
@@ -156,7 +168,7 @@ app.get('/api/v1/analytics', async (req, res) => {
 
     } catch (e) {
         await logSystemError('CODIGO', 'Error en consulta de analíticas US-08', e.stack, nodeId);
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Error al consultar analíticas." });
     }
 });
 
@@ -211,13 +223,13 @@ app.get('/api/reports/monthly', async (req, res) => {
 
     } catch (e) {
         await logSystemError('CODIGO', 'Error en generación de reporte mensual', e.stack);
-        res.status(500).json({ detail: e.message });
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
 app.get('/api/sensores/:id_nodo/historico', async (req, res) => {
     const { id_nodo } = req.params;
-    const dias = parseInt(req.query.dias) || 7;
+    const dias = Math.min(Math.max(parseInt(req.query.dias) || 7, 1), 90);
     
     try {
         const query = `
@@ -230,7 +242,7 @@ app.get('/api/sensores/:id_nodo/historico', async (req, res) => {
         res.json(rows);
     } catch (e) {
         await logSystemError('CODIGO', 'Error en consulta de históricos por nodo', e.stack, id_nodo);
-        res.status(500).json({ detail: e.message });
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
@@ -250,14 +262,16 @@ app.get('/api/estadisticas', async (req, res) => {
         res.json({ status: "success", data: rows });
     } catch (e) {
         await logSystemError('CODIGO', 'Error en consulta de estadísticas generales', e.stack);
-        res.status(500).json({ detail: e.message });
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
-// Endpoint de depuración para probar el capturador de errores (US-06)
-app.get('/api/debug/error', (req, res) => {
-    throw new Error("Fallo de prueba US-06: Excepción provocada");
-});
+// Debug endpoint: only available in development
+if (process.env.NODE_ENV === 'development') {
+    app.get('/api/debug/error', (req, res) => {
+        throw new Error("Fallo de prueba US-06: Excepción provocada");
+    });
+}
 
 // Cache en memoria para la última predicción válida (Escenario 2)
 const climateCache = {};
@@ -344,7 +358,7 @@ app.get('/api/v1/recommendations', async (req, res) => {
 
     } catch (e) {
         await logSystemError('CODIGO', 'Error en generación de recomendaciones', e.stack, sectorId);
-        res.status(500).json({ detail: e.message });
+        res.status(500).json({ detail: "Error interno del servidor" });
     }
 });
 
