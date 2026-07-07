@@ -1,22 +1,10 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { pool } = require('./shared/db');
+const { validateHumidityRange } = require('./shared/validation');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const app = createApp();
 
 const PORT = process.env.PORT || 8003;
-const DB_CONFIG = {
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
-    database: process.env.DB_NAME || 'ecosystems_db',
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432')
-};
-const pool = new Pool(DB_CONFIG);
 
 app.get('/api/perfiles', async (req, res) => {
     try {
@@ -43,15 +31,9 @@ app.post('/api/crop-profiles', async (req, res) => {
         return res.status(400).json({ error: "INVALID_TYPE", message: "La humedad mínima y máxima deben ser números enteros." });
     }
 
-    if (minHumidity < 0 || maxHumidity < 0 || minHumidity > 100 || maxHumidity > 100) {
-        return res.status(400).json({ error: "INVALID_RANGE", message: "La humedad debe estar entre 0 y 100." });
-    }
-
-    if (minHumidity >= maxHumidity) {
-        return res.status(400).json({ 
-            error: "MIN_GREATER_THAN_MAX", 
-            message: "La humedad mínima debe ser menor que la máxima." 
-        });
+    const rangeError = validateHumidityRange(minHumidity, maxHumidity);
+    if (rangeError) {
+        return res.status(400).json({ error: "INVALID_RANGE", message: rangeError });
     }
 
     try {
@@ -133,12 +115,9 @@ app.put('/api/irrigation/thresholds', async (req, res) => {
         return res.status(400).json({ error: "Campos faltantes: id_perfil, humedad_min_prc y humedad_max_prc son obligatorios." });
     }
 
-    if (humedad_min_prc < 0 || humedad_max_prc < 0 || humedad_min_prc > 100 || humedad_max_prc > 100) {
-        return res.status(400).json({ error: "Los umbrales deben estar entre 0 y 100." });
-    }
-
-    if (humedad_min_prc >= humedad_max_prc) {
-        return res.status(400).json({ error: "Datos inconsistentes: el umbral mínimo debe ser menor al umbral máximo." });
+    const rangeError = validateHumidityRange(humedad_min_prc, humedad_max_prc);
+    if (rangeError) {
+        return res.status(400).json({ error: rangeError });
     }
 
     try {

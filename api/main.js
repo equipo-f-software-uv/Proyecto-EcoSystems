@@ -1,29 +1,9 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { pool } = require('./shared/db');
 
-const app = express();
-// Middleware para parsear el body como JSON
-app.use(express.json());
-// Habilitar CORS para permitir peticiones desde el Frontend (React)
-app.use(cors());
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const app = createApp();
 
 const PORT = process.env.PORT || 8000;
-
-// =================================================================
-// 1. CONFIGURACIÓN DE BASE DE DATOS (Pool de conexiones)
-// =================================================================
-// Usamos un pool para manejar mejor las peticiones concurrentes (Requisito US-10)
-const pool = new Pool({
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
-    database: process.env.DB_NAME || 'ecosystems_db',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    max: 100
-});
 
 // =================================================================
 // 2. ENDPOINTS (Rutas)
@@ -71,30 +51,6 @@ app.post('/api/mediciones', async (req, res) => {
     } catch (error) {
         console.error("Error BD:", error);
         return res.status(500).json({ detail: `Error al insertar en BD: ${error.message}` });
-    }
-});
-
-// =================================================================
-// 3. ENDPOINT DE ESTADÍSTICAS (US-13: Visualización de históricos)
-// =================================================================
-app.get('/api/estadisticas', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                TO_CHAR(fecha_hora, 'YYYY-MM-DD') as date,
-                SUM(flujo_agua_lpm) as water,
-                AVG(humedad_suelo_prc) as humidity
-            FROM medicion_historica
-            WHERE fecha_hora >= CURRENT_DATE - INTERVAL '7 days'
-            GROUP BY TO_CHAR(fecha_hora, 'YYYY-MM-DD')
-            ORDER BY date ASC
-        `;
-        const { rows } = await pool.query(query);
-        
-        res.json({ status: "success", data: rows });
-    } catch (error) {
-        console.error("Error BD Estadísticas:", error);
-        res.status(500).json({ detail: `Error al consultar históricos: ${error.message}` });
     }
 });
 

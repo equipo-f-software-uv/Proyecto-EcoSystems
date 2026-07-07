@@ -1,34 +1,17 @@
-const express = require('express');
-const amqplib = require('amqplib');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { connectWithRetry, getTelemetryRoutingKey, EXCHANGE_NAME } = require('./shared/rabbitmq');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+const app = createApp();
 
 const PORT = process.env.PORT || 8004;
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
-const EXCHANGE_NAME = "telemetry_exchange";
 
 let mqChannel;
 
 async function initRabbitMQ() {
-    const maxRetries = 15;
-    const retryIntervalMs = 5000;
-    for (let i = 1; i <= maxRetries; i++) {
-        try {
-            console.log(`[*] Intentando conectar a RabbitMQ en LoRaWAN (Intento ${i}/${maxRetries})...`);
-            const conn = await amqplib.connect(RABBITMQ_URL);
-            mqChannel = await conn.createChannel();
-            await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
-            console.log("[*] Conectado a RabbitMQ en Adaptador LoRaWAN. Exchange listo.");
-            return;
-        } catch (error) {
-            console.error(`[!] Error en RabbitMQ (LoRaWAN) Intento ${i}/${maxRetries}:`, error.message);
-            if (i === maxRetries) throw error;
-            await new Promise(res => setTimeout(res, retryIntervalMs));
-        }
-    }
+    const conn = await connectWithRetry('Adaptador LoRaWAN');
+    mqChannel = await conn.createChannel();
+    await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
+    console.log("[*] Conectado a RabbitMQ en Adaptador LoRaWAN. Exchange listo.");
 }
 
 app.get('/', (req, res) => {
@@ -116,8 +99,7 @@ app.post('/api/v1/lorawan/webhook', async (req, res) => {
             });
 
             // Enrutamiento inteligente a colas RabbitMQ (Exchange Topic)
-            const hasHumidity = payload.metrics.humedad_suelo_prc !== undefined;
-            const routingKey = hasHumidity ? 'telemetry.humidity' : 'telemetry.other';
+            const routingKey = getTelemetryRoutingKey(payload.metrics);
 
             mqChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(payload)));
             console.log(`[LoRaWAN Webhook] Puenteado con éxito a RabbitMQ (${routingKey}):`, JSON.stringify(payload));
