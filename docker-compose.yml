@@ -5,31 +5,133 @@ services:
     image: timescale/timescaledb:latest-pg15
     container_name: ecosystems_db
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-ecosystems_db}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ecosystems_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  api:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecosystems_rabbitmq
+    user: root
+    ports:
+      - "5672:5672"
+      - "15672:15672" # RabbitMQ Management Console
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  api-ingesta:
     build: .
-    container_name: ecosystems_api
-    command: node api/main.js
+    container_name: ecosystems_api_ingesta
+    command: node api/api_ingesta.js
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      rabbitmq:
+         condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - DB_HOST=db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+
+  api-valvulas:
+    build: .
+    container_name: ecosystems_api_valvulas
+    command: node api/controlador_valvulas.js
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PORT=8001
+      - DB_HOST=db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - SIMULATE_ARDUINO=true
+
+  api-historicos:
+    build: .
+    container_name: ecosystems_api_historicos
+    command: node api/api_historicos.js
+    ports:
+      - "8002:8002"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PORT=8002
+      - DB_HOST=db
+
+  api-perfiles:
+    build: .
+    container_name: ecosystems_api_perfiles
+    command: node api/api_perfiles.js
+    ports:
+      - "8003:8003"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PORT=8003
+      - DB_HOST=db
+
+  worker-historicos:
+    build: .
+    container_name: ecosystems_worker_historicos
+    command: node api/worker_historicos.js
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       - DB_HOST=db
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_PORT=${DB_PORT}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+
+  simulator:
+    build: .
+    container_name: ecosystems_simulator
+    command: node api/simulate_readings.js
+    depends_on:
+      api-ingesta:
+        condition: service_started
+      api-valvulas:
+        condition: service_started
+    environment:
+      - INGESTA_URL=http://api-ingesta:8000
+      - VALVULAS_URL=http://api-valvulas:8001
 
   frontend:
     build:
@@ -38,10 +140,11 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
+      - api-ingesta
+      - api-valvulas
+      - api-historicos
+      - api-perfiles
 
 volumes:
   pgdata:
-
+  rabbitmq_data:

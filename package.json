@@ -12,7 +12,8 @@
     "start:worker": "node api/worker_historicos.js",
     "start:mqtt_adapter": "node api/adaptador_mqtt.js",
     "start:lorawan_adapter": "node api/adaptador_lorawan.js",
-    "start:swagger": "node api/swagger-server.js"
+    "start:swagger": "node api/swagger-server.js",
+    "start:simulator": "node api/simulate_readings.js"
   },
   "keywords": [],
   "author": "",
