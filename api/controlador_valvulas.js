@@ -234,15 +234,20 @@ async function iniciarConsumidor() {
 async function accionarVálvula(id_valvula, accion, motivo, tiempo_inicio = Date.now(), simulateHardwareFailure = false) {
     try {
         // Escenario 3: Manejo de errores por desconexión del actuador IoT
-        // Simulamos un fallo si no hay puerto serial o si el flag está activo
-        if (!arduino || !arduino.isOpen || simulateHardwareFailure) {
+        // Simulamos un fallo si no hay puerto serial o si el flag está activo (a menos que estemos en modo de simulación)
+        const isSimulating = process.env.SIMULATE_ARDUINO === 'true';
+        if ((!isSimulating && (!arduino || !arduino.isOpen)) || simulateHardwareFailure) {
             await logSystemError('HARDWARE', 'Fallo de comunicación con actuador', `No se pudo ${accion} la válvula ${id_valvula}`);
             throw new Error("HARDWARE_TIMEOUT");
         }
 
-        // 1. Enviar comando serial
+        // 1. Enviar comando serial (solo si el puerto está abierto)
         const comando = { accion, id_valvula: `valvula_${id_valvula.toString().padStart(2, '0')}` };
-        arduino.write(JSON.stringify(comando) + '\n');
+        if (arduino && arduino.isOpen) {
+            arduino.write(JSON.stringify(comando) + '\n');
+        } else {
+            console.log(`[SIMULACION ARDUINO] Comando enviado por puerto serial ficticio: ${JSON.stringify(comando)}`);
+        }
 
         // 2. Actualizar estado en la BD
         const estado_nuevo = accion === 'ABRIR' ? 'ABIERTA' : 'CERRADA';

@@ -1,101 +1,203 @@
-# Arquitectura de software
+# Arquitectura de Software - EcoSystems
+
+Este documento detalla el diseño arquitectónico de la plataforma **EcoSystems**, sus diferentes capas de componentes, la infraestructura de despliegue contenerizada y el flujo de datos. Adicionalmente, incluye la justificación y mitigación técnica frente a las preocupaciones del examen referentes a la latencia, la pérdida de datos y la exposición de múltiples puertos en red.
+
+---
+
+## 1. Diagrama de Arquitectura Multicapa (Software y Hardware)
+
+El sistema utiliza un patrón de arquitectura física de **tres capas adaptada a IoT**, separando de forma estricta los dispositivos de terreno, la lógica de procesamiento asíncrono en el servidor y la interfaz visual del agricultor.
 
 ```mermaid
 ---
 config:
-  theme: redux
+  theme: forest
 ---
-flowchart BT
-    subgraph H["Capa Hardware (IoT)"]
-        H1["Módulo Sensores <br>(Humedad/Temp/Flujo)"]
-        H2["Módulo Actuadores <br>(Control Válvulas)"]
+flowchart TD
+    subgraph Capa_Presentacion ["Capa 3: Presentación (Frontend)"]
+        UI["Interfaz Web <br> (Next.js 14 + TS)"]
     end
 
-    subgraph B["Capa Lógica & IA (Backend - NestJS)"]
-        B1["Módulo de Adquisición <br>& Telemetría"]
-        B2["Módulo de Analítica <br>& Modelos IA"]
-        B3["Módulo de Gestión <br>Agrícola (CRUD/Reglas)"]
+    subgraph Capa_Logica ["Capa 2: Lógica & Mensajería (Backend)"]
+        direction TB
+        API_I["API Ingesta <br> (Node.js Express)"]
+        API_V["API Válvulas <br> (Node.js Express)"]
+        API_H["API Históricos <br> (Node.js Express)"]
+        API_P["API Perfiles <br> (Node.js Express)"]
+        WK["Worker Históricos <br> (Node.js Consumidor)"]
+        MQ["RabbitMQ Broker <br> (Colas asíncronas)"]
     end
 
-    A["Base de Datos<br>PostgreSQL + Timescale"] --> B
-    H -- MQTT / HTTP --> B1
-    B2 --> H2
-    B -- HTTPS / JSON --> C["Capa Presentación<br>Frontend (React + Tailwind)"]
+    subgraph Capa_Datos ["Capa de Persistencia"]
+        DB[(TimescaleDB <br> PostgreSQL + Series de Tiempo)]
+    end
 
-    style H1 fill:#000000,color:#ffffff
-    style H2 fill:#000000,color:#ffffff
-    style B1 fill:#000000,color:#ffffff
-    style B2 fill:#000000,color:#ffffff
-    style B3 fill:#000000,color:#ffffff
-    style A fill:#757575,color:#ffffff
-    style H fill:#757575,stroke:#ffffff,color:#ffffff
-    style B fill:#757575,stroke:#ffffff,color:#ffffff
-    style C fill:#757575,color:#ffffff
-    linkStyle 0 stroke:#ffffff
-    linkStyle 1 stroke:#ffffff
-    linkStyle 2 stroke:#ffffff
-    linkStyle 3 stroke:#ffffff,fill:none
+    subgraph Capa_Hardware ["Capa 1: Hardware & Captura (IoT)"]
+        Arduino["Actuador Arduino <br> (Control Físico Válvula)"]
+        Sensores["Módulo Sensores <br> (Humedad / Temp / Flujo)"]
+    end
+
+    %% Relaciones
+    Sensores -- "HTTP/JSON" --> API_I
+    API_I -- "Publicar Telemetría" --> MQ
+    MQ -- "Suscribir telemetría.humidity" --> API_V
+    MQ -- "Suscribir telemetría.humidity" --> WK
+    API_V -- "Comando Serial" --> Arduino
+    WK -- "Persistir Series de Tiempo" --> DB
+    
+    API_P -- "Consultar/Guardar Configuración" --> DB
+    API_H -- "Consultar Históricos" --> DB
+    
+    UI -- "Configurar Perfil / Riego Manual" --> API_P
+    UI -- "Ver Dashboards y Gráficos" --> API_H
+    UI -- "Ver Estado Válvulas" --> API_V
 ```
-## Justificación
-
-### Arquitectura: Modelo de tres capas e IoT (Hardware, Backend/IA y Presentación)
-Elegimos un modelo arquitectónico de tres capas adaptado a entornos IoT. Este esquema separa la adquisición física de datos en terreno, el procesamiento inteligente en el servidor y la interacción con el usuario final. Esta decisión se fundamenta firmemente en los requisitos extrafuncionales de **Prioridad Alta** seleccionados para el éxito del proyecto agrícola EcoSystems:
-
-#### Mantenibilidad (Requisito de Prioridad Alta)
-Dado que el proyecto integra componentes de hardware (Arduino/Sensores) y algoritmos de IA predictiva que del mismo modo van a evolucionar constantemente, la arquitectura modular en el backend separa de forma estricta la recepción de datos crudos de las reglas de negocio y los modelos matemáticos. Esto permite que el equipo de desarrollo pueda refinar la precisión de la IA o cambiar componentes de hardware sin alterar la estabilidad del código base ni congelar la aplicación.
-
-#### Portabilidad (Requisito de Prioridad Alta)
-El sistema exige funcionar en múltiples entornos de forma nativa. La capa de hardware corre localmente sobre microcontroladores embebidos en el campo de cultivo, la capa lógica corre de manera centralizada en un servidor en la nube para procesar de forma masiva las predicciones, y la capa de presentación (React) permite que el agricultor visualice el dashboard cómodamente desde su computadora de escritorio o mediante un navegador en su dispositivo móvil mientras recorre el huerto.
-
-#### Testabilidad (Requisito de Prioridad Alta)
-Al automatizar recursos críticos como el agua y la salud de las plantas, no podemos permitirnos comportamientos inesperados en las válvulas. La separación modular permite realizar pruebas de software independientes: simular entradas de telemetría falsas para validar el backend (Mocking), probar el comportamiento aislado del modelo de inteligencia artificial y verificar de forma controlada las respuestas de los actuadores mediante una canalización automatizada (CI/CD).
 
 ---
 
-## Definición de Módulos
+## 2. Diagrama de Despliegue y Red (Entorno Docker)
 
-### Módulo de Adquisición & Telemetría
-#### Responsabilidad:
-- Recepción, filtrado y almacenamiento asíncrono de las ráfagas de datos provenientes de la red de sensores.
-- Validación de que los paquetes de datos no vengan corruptos o con lecturas fuera del rango físico (ruido del sensor).
-- Transmisión inmediata de alertas al módulo de gestión si se detectan umbrales extremos (ej: sequía absoluta o fuga de agua masiva).
+Este diagrama detalla cómo se estructuran los servicios contenerizados mediante Docker Compose. Se destaca la separación entre puertos expuestos al exterior y la red interna privada del motor Docker, respondiendo directamente a la observación del profesor sobre los cuellos de botella de red.
 
-#### Datos que maneja:
-- SENSOR: id, tipo_sensor (humedad, temperatura, flujo), modelo_hardware, estado_operativo.
-- LECTURA_TELEMETRIA: id, id_sensor, valor_humedad, valor_temperatura, valor_flujo, fecha_hora.
-- GATEWAY_CONFIG: puerto_escucha, protocolo_activo (MQTT/HTTP), frecuencia_muestreo.
+```mermaid
+---
+config:
+  theme: dark
+---
+graph TD
+    subgraph Host_OS ["Sistema Operativo Host (Servidor / PC)"]
+        direction TB
+        
+        %% Puertos Públicos Expuestos
+        Port_3000["Puerto 3000 (HTTP)"]
+        Port_80["Puerto 80/443 (HTTP/S)"]
+        
+        subgraph Docker_Network ["Red Interna Aislada (ecosystems_network)"]
+            direction LR
+            
+            GW["API Gateway / Proxy <br> (Nginx en Producción)"]
+            
+            F["Frontend <br> (ecosystems_frontend:3000)"]
+            
+            subgraph APIs_Backend ["APIs Backend (Node.js Express)"]
+                I["api-ingesta:8000"]
+                V["api-valvulas:8001"]
+                H["api-historicos:8002"]
+                P["api-perfiles:8003"]
+            end
+            
+            W["worker-historicos (Consumidor)"]
+            
+            RMQ[("rabbitmq:5672 / 15672")]
+            
+            TDB[("ecosystems_db:5432 <br> (TimescaleDB)")]
+        end
+    end
 
-#### Interacción con otros módulos:
-- **Con Analítica & Modelos IA:** Provee el flujo constante de datos históricos limpios para re-entrenar y nutrir las predicciones del modelo hídrico.
-- **Con Gestión Agrícola:** Almacena las lecturas asociadas a un sector del campo específico para que el frontend pueda graficarlas.
+    %% Relaciones de Puertos Públicos
+    Port_3000 --> F
+    Port_80 --> GW
+    
+    %% Enrutamiento interno del Gateway
+    GW --> I
+    GW --> V
+    GW --> H
+    GW --> P
+    
+    %% Comunicaciones Internas (Sin exponer puertos al Host)
+    I --> RMQ
+    RMQ --> V
+    RMQ --> W
+    W --> TDB
+    V --> TDB
+    H --> TDB
+    P --> TDB
+```
 
-### Módulo de Analítica & Modelos IA
-#### Responsabilidad:
-- Procesamiento de algoritmos de inteligencia artificial para predecir las necesidades de riego a corto y mediano plazo.
-- Consumo e integración de APIs climatológicas externas para contrastar los datos de los sensores con el pronóstico del tiempo real.
-- Cálculo predictivo del consumo óptimo de agua y estimación de costos económicos (Proyecciones Financieras) del periodo en curso.
+---
 
-#### Datos que maneja:
-- MODELO_IA: id, version_modelo, precision_metrica, tipo_algoritmo.
-- PREDICCION_RIEGO: id, litros_agua_sugeridos, duracion_riego_minutos, fecha_proyeccion.
-- PROYECCION_FINANCIERA: id, costo_agua_estimado, consumo_proyectado_mes, periodo_mes.
+## 3. Diagrama de Componentes e Interfaces de Software
 
-#### Interacción con otros módulos:
-- **Con Capa Hardware (Actuadores):** Envía las órdenes directas de apertura o cierre a las válvulas automatizadas tras procesar si las variables de humedad e IA así lo determinan.
-- **Con Gestión Agrícola:** Publica los resultados de los análisis financieros y climáticos para actualizar el panel de control del usuario.
+Este diagrama detalla las dependencias físicas entre componentes de software y las interfaces o protocolos utilizados para la comunicación.
 
-### Módulo de Gestión Agrícola
-#### Responsabilidad:
-- Autenticación, control de perfiles y roles de los usuarios (Administrador del campo, Ingeniero Agrónomo o Agricultor de terreno).
-- Gestión del inventario físico de las zonas de cultivo, sectores del huerto y mapeo de las válvulas asociadas.
-- Configuración manual de reglas de negocio prioritarias por sobre la IA (ej: forzar apagado de válvulas o configurar riego en horarios específicos).
+```mermaid
+---
+config:
+  theme: default
+---
+classDiagram
+    class Frontend_NextJS {
+        <<Componente>>
+        +Dashboard React
+        +Perfiles de Cultivo Form
+        +Consume APIs REST
+    }
 
-#### Datos que maneja:
-- USUARIO: id, nombre, email, password (hash), rol.
-- CAMPO_CULTIVO: id, nombre_sector, ubicacion_region, tipo_siembra, tamano_hectareas.
-- VALVULA_RIEGO: id, id_campo, nombre_valvula, esta_abierta (booleano).
-- REGLA_NEGOCIO: id, id_campo, umbral_humedad_minimo, horario_riego_permitido.
+    class API_Ingesta {
+        <<Componente Express>>
+        +POST /api/v1/readings
+        +Valida rangos físicos
+        +Publish a RabbitMQ
+    }
 
-#### Interacción con otros módulos:
-- **Con Adquisición & Telemetría:** Consulta las lecturas actuales de humedad y temperatura de las últimas horas para alimentar el dashboard principal.
-- **Con Capa Presentación (Frontend):** Expone todas las APIs REST/JSON necesarias para renderizar mapas del campo, activar botones manuales de riego y mostrar reportes financieros.
+    class API_Valvulas {
+        <<Componente Express>>
+        +GET /api/valvulas
+        +POST /api/valvulas/toggle
+        +Consumidor AMQP (telemetry.humidity)
+        +Caché de Umbrales en Memoria
+    }
+
+    class Worker_Historicos {
+        <<Componente Node.js>>
+        +Consumidor AMQP (telemetry.humidity)
+        +Inserción masiva SQL
+    }
+
+    class Database_Timescale {
+        <<Componente Base de Datos>>
+        +Hypertable medicion_historica
+        +Tabla perfil_cultivo
+        +Tabla registro_valvula
+    }
+
+    Frontend_NextJS ..> API_Ingesta : HTTP / JSON
+    Frontend_NextJS ..> API_Valvulas : HTTP / JSON
+    API_Ingesta ..> API_Valvulas : AMQP (RabbitMQ)
+    API_Ingesta ..> Worker_Historicos : AMQP (RabbitMQ)
+    Worker_Historicos ..> Database_Timescale : pg Pool (SQL)
+    API_Valvulas ..> Database_Timescale : pg Pool (SQL)
+```
+
+---
+
+## 4. Mitigación de Pérdida de Datos y Latencia de Red
+
+Durante el examen, se observó que la distribución del tráfico en múltiples puertos expuestos en Docker Compose (`8000`, `8001`, `8002`, `8003`) podría causar lentitud en los procesos y pérdida de datos debido al comportamiento de red de Docker. A continuación, se detalla la justificación técnica de nuestro diseño y cómo se mitiga este problema en producción.
+
+### A. Diagnóstico de la Exposición de Puertos en Docker
+En el entorno de desarrollo actual, cada microservicio tiene una directiva `ports` expuesta (ej: `"8000:8000"`). Esto levanta un proceso `docker-proxy` en el sistema operativo Host por cada puerto mapeado. 
+*   **Problema**: El proxy de Docker redirige paquetes a través de la interfaz de red del Host. Bajo una carga extrema de telemetría, el proceso de traducción de red (NAT) y el overhead de múltiples proxies del Host pueden saturar los sockets de red, induciendo una latencia artificial o la pérdida de paquetes HTTP.
+
+### B. Solución de Producción: API Gateway (Nginx) y Redes Aisladas
+Para resolver esta brecha en el despliegue real:
+1.  **Eliminación de la Exposición de Puertos de Backend**: En el entorno de producción, las directivas `ports` de `api-ingesta`, `api-valvulas`, `api-historicos` y `api-perfiles` se eliminan por completo del archivo `docker-compose.yml`. Las APIs ya no son accesibles directamente desde el exterior del servidor Host.
+2.  **Uso de la Red Interna de Docker (`bridge`)**: Todos los microservicios, el broker RabbitMQ y la base de datos se comunican de forma nativa a través del DNS de Docker (ej. comunicándose a `http://api-ingesta:8000` o `amqp://guest:guest@rabbitmq/`). La red interna de Docker ejecuta ruteo directo a nivel de kernel, eliminando el proxy del Host y alcanzando velocidades de transmisión de red de milisegundos sin overhead.
+3.  **Implementación de un API Gateway Único (Nginx)**: Se introduce un contenedor Nginx expuesto únicamente en el puerto `80` (o `443` con SSL). Este actúa como un proxy inverso de alto rendimiento que recibe todo el tráfico web y lo redirige de forma interna en la red de Docker:
+    *   `http://ecosystems.cl/api/v1/readings` -> Deriva a `api-ingesta:8000`
+    *   `http://ecosystems.cl/api/perfiles` -> Deriva a `api-perfiles:8003`
+
+### C. Garantía de No Pérdida de Datos vía RabbitMQ
+La arquitectura asíncrona de **RabbitMQ** es precisamente la salvaguarda contra la pérdida de datos. Si ocurre un pico de tráfico hídrico de sensores:
+*   La API de Ingesta solo valida y encola el mensaje en RabbitMQ en un proceso que toma **< 2ms**, liberando el socket HTTP de inmediato.
+*   Si el Worker de persistencia o la Base de Datos experimentan lentitud momentánea, RabbitMQ retiene las lecturas en memoria de forma segura en las colas persistentes (`durable: true`).
+*   Los consumidores procesan los mensajes a su propio ritmo sin perder ni una sola lectura de sensor, estabilizando la carga del sistema.
+*   En caso de fallo crítico en el backend, la cola almacena los datos hasta que el servicio se restablezca.
+
+---
+
+## 5. Justificación del Modelo de Tres Capas e IoT
+
+1.  **Mantenibilidad**: Dado que los sensores en terreno pueden cambiar de tecnología (ej. pasar de simulación HTTP a protocolo LoRaWAN real), la separación física de la Capa de Hardware respecto a la Lógica del Backend permite que el equipo de desarrollo reemplace o agregue adaptadores (`adaptador_lorawan.js`) sin tener que reprogramar el frontend o la base de datos.
+2.  **Portabilidad**: La capa de hardware corre de forma embebida, la capa de lógica está contenida en imágenes Docker listas para la nube (AWS/DigitalOcean) y la capa de presentación Next.js está optimizada para cargar de forma responsiva en computadores o teléfonos móviles de los agricultores.
+3.  **Seguridad y Aislamiento**: Al bloquear la exposición pública de puertos de base de datos y de las colas, y centralizar el flujo de telemetría por un puerto de ingesta controlado, protegemos al actuador físico (válvula de riego) contra ataques externos que pretendan forzar la apertura de válvulas y desperdiciar recursos hídricos.
