@@ -106,7 +106,8 @@ async function inicializarCache() {
         }
         console.log(`[*] Caché inicializada con éxito. Válvulas: ${Object.keys(cache_valvulas).length}, Umbrales: ${Object.keys(cache_umbrales).length}.`);
     } catch (e) {
-        console.error("Error inicializando caché:", e.message);
+        console.error("[FATAL] Error inicializando caché:", e.message);
+        await logSystemError('BASE_DATOS', 'Fallo al inicializar caché de umbrales y válvulas', e.stack);
     }
 }
 
@@ -171,6 +172,7 @@ async function iniciarConsumidor() {
                             cache_umbrales[sensor_id] = { min: umbral_min, max: umbral_max, timestamp: Date.now() };
                         } catch (err) {
                             console.error("Error consultando umbrales:", err.message);
+                            await logSystemError('BASE_DATOS', 'Error consultando umbrales desde BD', err.message, sensor_id);
                         }
                     }
 
@@ -192,6 +194,7 @@ async function iniciarConsumidor() {
                             }
                         } catch (err) {
                             console.error("Error consultando válvula:", err.message);
+                            await logSystemError('BASE_DATOS', 'Error consultando válvula desde BD', err.message, sensor_id);
                         }
                     }
 
@@ -227,7 +230,8 @@ async function iniciarConsumidor() {
             }
         });
     } catch (error) {
-        console.error("Error en consumidor RabbitMQ:", error);
+        console.error("[FATAL] Error en consumidor RabbitMQ:", error.message);
+        await logSystemError('CONEXION', 'Fallo al iniciar consumidor RabbitMQ en Válvulas', error.stack);
     }
 }
 
@@ -400,6 +404,7 @@ app.get('/api/v1/valves/:id/status', async (req, res) => {
             overrideActive: valve.bloqueo_manual
         });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error en endpoint de estado de válvula', e.stack);
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
     }
 });
@@ -472,6 +477,7 @@ app.post('/api/v1/valves/:id/override', async (req, res) => {
 
     } catch (e) {
         await client.query('ROLLBACK');
+        await logSystemError('CODIGO', 'Error en override manual de válvula', e.stack);
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
     } finally {
         client.release();
@@ -501,6 +507,7 @@ app.post('/api/v1/valves/:id/auto', async (req, res) => {
 
         res.status(200).json({ status: "success", message: "Válvula devuelta a control automático." });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error en restauración de modo automático de válvula', e.stack);
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: e.message });
     }
 });
@@ -542,6 +549,7 @@ app.post('/api/v1/valve-logs', async (req, res) => {
             data: rows[0]
         });
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al registrar log de auditoría de válvula', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -574,6 +582,7 @@ app.get('/api/v1/valve-logs', async (req, res) => {
 
         res.status(200).json(rows);
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al consultar logs de auditoría de válvula', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -594,6 +603,7 @@ app.get('/api/irrigation/events', async (req, res) => {
         const { rows } = await pool.query(query);
         res.json(rows);
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al consultar eventos de riego', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });
@@ -607,6 +617,7 @@ app.post('/api/valvulas/:id_valvula/accionar', async (req, res) => {
         const result = await accionarVálvula(id_valvula, accion, motivo);
         res.json(result);
     } catch (e) {
+        await logSystemError('CODIGO', 'Error al accionar válvula (endpoint legacy)', e.stack);
         res.status(500).json({ detail: e.message });
     }
 });

@@ -13,14 +13,34 @@ const EXCHANGE_NAME = "telemetry_exchange";
 let mqChannel;
 
 async function initRabbitMQ() {
-    try {
-        const conn = await amqplib.connect(RABBITMQ_URL);
-        mqChannel = await conn.createChannel();
-        // Usamos un exchange de tipo fanout para que todos los interesados reciban el mensaje
-        await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
-        console.log("[*] Conectado a RabbitMQ en Ingesta. Exchange listo.");
-    } catch (error) {
-        console.error("Error en RabbitMQ:", error);
+    const maxRetries = 15;
+    const retryIntervalMs = 5000;
+    for (let i = 1; i <= maxRetries; i++) {
+        try {
+            const conn = await amqplib.connect(RABBITMQ_URL);
+            mqChannel = await conn.createChannel();
+            await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
+
+            conn.on('error', (err) => {
+                console.error("[!] Conexión RabbitMQ perdida en Ingesta:", err.message);
+                mqChannel = null;
+            });
+            conn.on('close', () => {
+                console.error("[!] Conexión RabbitMQ cerrada en Ingesta. Reintentando...");
+                mqChannel = null;
+                setTimeout(initRabbitMQ, retryIntervalMs);
+            });
+
+            console.log("[*] Conectado a RabbitMQ en Ingesta. Exchange listo.");
+            return;
+        } catch (error) {
+            console.error(`[!] Error al conectar a RabbitMQ en Ingesta (Intento ${i}/${maxRetries}): ${error.message}`);
+            if (i === maxRetries) {
+                console.error("[FATAL] No se pudo conectar a RabbitMQ después de todos los reintentos. El servicio operará sin cola de mensajes.");
+                return;
+            }
+            await new Promise(res => setTimeout(res, retryIntervalMs));
+        }
     }
 }
 

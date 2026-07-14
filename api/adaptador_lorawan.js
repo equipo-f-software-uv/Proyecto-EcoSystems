@@ -21,6 +21,17 @@ async function initRabbitMQ() {
             const conn = await amqplib.connect(RABBITMQ_URL);
             mqChannel = await conn.createChannel();
             await mqChannel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
+
+            conn.on('error', (err) => {
+                console.error("[!] Conexión RabbitMQ perdida en LoRaWAN:", err.message);
+                mqChannel = null;
+            });
+            conn.on('close', () => {
+                console.error("[!] Conexión RabbitMQ cerrada en LoRaWAN. Reintentando...");
+                mqChannel = null;
+                setTimeout(initRabbitMQ, retryIntervalMs);
+            });
+
             console.log("[*] Conectado a RabbitMQ en Adaptador LoRaWAN. Exchange listo.");
             return;
         } catch (error) {
@@ -132,7 +143,7 @@ app.post('/api/v1/lorawan/webhook', async (req, res) => {
         }
 
     } catch (e) {
-        console.error("[LoRaWAN Webhook] Error interno:", e.message);
+        console.error("[LoRaWAN Webhook] Error interno:", e.message, e.stack);
         return res.status(500).json({ error: `Error interno: ${e.message}` });
     }
 });
