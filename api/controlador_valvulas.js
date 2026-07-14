@@ -1,30 +1,14 @@
-const express = require('express');
-const amqplib = require('amqplib');
-const { Pool } = require('pg');
 const { SerialPort } = require('serialport');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { pool, logSystemError } = require('./shared/db');
+const { connectWithRetry, EXCHANGE_NAME } = require('./shared/rabbitmq');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const app = createApp();
 
 const PORT = process.env.PORT || 8001;
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
-const EXCHANGE_NAME = "telemetry_exchange";
 const QUEUE_NAME = "valvulas_queue";
-const SERIAL_PORT = process.env.SERIAL_PORT || "COM3"; // Ajustar al puerto donde conectes el Arduino
+const SERIAL_PORT = process.env.SERIAL_PORT || "COM3";
 const BAUD_RATE = 115200;
-
-const DB_CONFIG = {
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
-    database: process.env.DB_NAME || 'ecosystems_db',
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432')
-};
-const pool = new Pool(DB_CONFIG);
 
 let arduino;
 try {
@@ -49,20 +33,6 @@ const cache_umbrales = {};
 const cache_valvulas = {};
 let cached_estado_global = 'ACTIVE';
 const TIEMPO_CACHE_MS = 60000;
-
-// Helper para registro de errores centralizado (Mismo que US-06)
-async function logSystemError(tipo, mensaje, detalle = null, nodoId = null) {
-    try {
-        const query = `
-            INSERT INTO registro_error_sistema (tipo_error, mensaje_error, detalle_tecnico, nodo_id)
-            VALUES ($1, $2, $3, $4)
-        `;
-        await pool.query(query, [tipo, mensaje, detalle, nodoId]);
-        console.log(`[LOG-ERROR] ${tipo}: ${mensaje}`);
-    } catch (e) {
-        console.error("Error crítico: No se pudo guardar el log en la BD:", e.message);
-    }
-}
 
 // Función auxiliar para revisar estado global (Usa la caché en memoria)
 function isSystemSuspended() {
@@ -110,25 +80,9 @@ async function inicializarCache() {
     }
 }
 
-async function connectWithRetry() {
-    const maxRetries = 15;
-    const retryIntervalMs = 5000;
-    for (let i = 1; i <= maxRetries; i++) {
-        try {
-            const conn = await amqplib.connect(RABBITMQ_URL);
-            console.log("[*] Conexión a RabbitMQ establecida en Válvulas.");
-            return conn;
-        } catch (err) {
-            console.error(`[!] Error al conectar a RabbitMQ en Válvulas (Intento ${i}/${maxRetries}): ${err.message}`);
-            if (i === maxRetries) throw err;
-            await new Promise(res => setTimeout(res, retryIntervalMs));
-        }
-    }
-}
-
 async function iniciarConsumidor() {
     try {
-        const conn = await connectWithRetry();
+        const conn = await connectWithRetry('Válvulas');
         const channel = await conn.createChannel();
         
         // Configurar Exchange y Queue propia para este servicio como Topic

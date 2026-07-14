@@ -1,36 +1,9 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { pool, logSystemError } = require('./shared/db');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const app = createApp();
 
 const PORT = process.env.PORT || 8002;
-const DB_CONFIG = {
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
-    database: process.env.DB_NAME || 'ecosystems_db',
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432')
-};
-const pool = new Pool(DB_CONFIG);
-
-// Helper para registrar errores en la base de datos (US-06)
-async function logSystemError(tipo, mensaje, detalle = null, nodoId = null) {
-    try {
-        const query = `
-            INSERT INTO registro_error_sistema (tipo_error, mensaje_error, detalle_tecnico, nodo_id)
-            VALUES ($1, $2, $3, $4)
-        `;
-        await pool.query(query, [tipo, mensaje, detalle, nodoId]);
-        console.log(`[LOG-ERROR] ${tipo}: ${mensaje}`);
-    } catch (e) {
-        console.error("Error crítico: No se pudo guardar el log en la BD:", e.message);
-    }
-}
 
 // Escenario 2: Monitoreo de desconexión de hardware (Simulación)
 async function monitorearConectividad() {

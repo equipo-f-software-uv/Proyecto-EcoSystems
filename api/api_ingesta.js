@@ -1,14 +1,11 @@
-const express = require('express');
 const amqplib = require('amqplib');
-const cors = require('cors');
+const { createApp } = require('./shared/createApp');
+const { RABBITMQ_URL, EXCHANGE_NAME } = require('./shared/config');
+const { getTelemetryRoutingKey } = require('./shared/rabbitmq');
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+const app = createApp();
 
 const PORT = process.env.PORT || 8000;
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
-const EXCHANGE_NAME = "telemetry_exchange";
 
 let mqChannel;
 
@@ -105,9 +102,7 @@ app.post('/api/mediciones', async (req, res) => {
 
         if (mqChannel) {
             // Publicamos al exchange en lugar de directamente a una cola
-            const hasHumidity = payload.metrics && payload.metrics.humedad_suelo_prc !== undefined;
-            const routingKey = hasHumidity ? 'telemetry.humidity' : 'telemetry.other';
-            mqChannel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(payload)));
+            mqChannel.publish(EXCHANGE_NAME, getTelemetryRoutingKey(payload.metrics), Buffer.from(JSON.stringify(payload)));
             return res.json({ status: "success", message: "Datos publicados en el exchange correctamente" });
         } else {
             return res.status(503).json({ detail: "Servicio de colas no disponible" });

@@ -1,24 +1,7 @@
-const amqplib = require('amqplib');
-const { Pool } = require('pg');
+const { pool } = require('./shared/db');
+const { connectWithRetry, EXCHANGE_NAME } = require('./shared/rabbitmq');
 
-// =================================================================
-// CONFIGURACIÓN DEL BROKER Y BASE DE DATOS
-// =================================================================
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
-const EXCHANGE_NAME = "telemetry_exchange";
 const QUEUE_NAME = "historicos_queue";
-
-const DB_CONFIG = {
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'tu_password',
-    database: process.env.DB_NAME || 'ecosystems_db',
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432')
-};
-
-const pool = new Pool(DB_CONFIG);
 
 let batch = [];
 const BATCH_SIZE_LIMIT = 500;
@@ -76,28 +59,12 @@ async function flushBatch() {
     }
 }
 
-async function connectWithRetry() {
-    const maxRetries = 15;
-    const retryIntervalMs = 5000;
-    for (let i = 1; i <= maxRetries; i++) {
-        try {
-            const conn = await amqplib.connect(RABBITMQ_URL);
-            console.log("[*] Conexión a RabbitMQ establecida con éxito.");
-            return conn;
-        } catch (err) {
-            console.error(`[!] Error al conectar a RabbitMQ (Intento ${i}/${maxRetries}): ${err.message}`);
-            if (i === maxRetries) throw err;
-            await new Promise(res => setTimeout(res, retryIntervalMs));
-        }
-    }
-}
-
 async function main() {
     console.log("Iniciando Worker de Históricos Optimizado (Node.js)...");
 
     try {
         // 1. Conectar a RabbitMQ con reintentos
-        const conn = await connectWithRetry();
+        const conn = await connectWithRetry('Worker Históricos');
         const channel = await conn.createChannel();
         channelRef = channel;
 
